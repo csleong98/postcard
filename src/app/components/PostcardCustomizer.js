@@ -4,9 +4,21 @@ import React, { useState, useRef } from 'react';
 
 export default function PostcardCustomizer() {
   const [currentSide, setCurrentSide] = useState('front');
+  const [uploadedImage, setUploadedImage] = useState('/images/default-image.png'); // Default image
 
   const handleFlip = () => {
     setCurrentSide(currentSide === 'front' ? 'back' : 'front');
+  };
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setUploadedImage(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -22,13 +34,38 @@ export default function PostcardCustomizer() {
           }`}
         >
           {/* Front Side */}
-          <div className="absolute w-full h-full backface-hidden bg-white shadow-md border rounded-lg flex items-center justify-center">
-            <p className="text-xl font-medium">Front Side</p>
+          <div className="absolute w-full h-full backface-hidden bg-white shadow-md flex items-center justify-center">
+            <img 
+              src={uploadedImage} 
+              alt="Postcard Front" 
+              className="w-full h-full object-cover p-4 box-border" 
+            />
+
+            <div className="absolute flex items-center justify-center">
+              <button 
+               aria-label='Upload image'
+               className="px-4 py-2 bg-gray-300 text-gray-900 font-bold rounded-md cursor-pointer flex items-center justify-center"
+               onClick={() => document.getElementById('imageUpload').click()}
+              >
+                Upload image
+              </button>
+              <input
+                id="imageUpload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageUpload}
+              />
+            </div>
           </div>
 
           {/* Back Side */}
-          <div className="absolute w-full h-full rotate-y-180 backface-hidden bg-gray-200 shadow-md border rounded-lg flex items-center justify-center">
-            <p className="text-xl font-medium">Back Side</p>
+          <div className="absolute w-full h-full rotate-y-180 backface-hidden bg-white shadow-md flex items-center justify-center">
+            {/* Default Postcard line */}
+            <div className="absolute top-6 bottom-6 left-1/2 w-[1px] bg-gray-300"></div>
+
+            {/* Stamp box */}
+            <div className="absolute top-6 right-6 w-[120px] h-[160px] border border-gray-300"></div>
           </div>
         </div>
       </div>
