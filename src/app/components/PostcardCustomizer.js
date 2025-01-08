@@ -30,6 +30,8 @@ export default function PostcardCustomizer() {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       const rect = canvas.getBoundingClientRect();
+      ctx.beginPath(); // Starts a new path each time drawing starts
+      ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
     }
   };
 
@@ -47,6 +49,9 @@ export default function PostcardCustomizer() {
   const stopDrawing = () => {
     if (isDrawing.current) {
       isDrawing.current = false;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      ctx.closePath(); // Close the path to ensure no connection between strokes
     }
   };
 
