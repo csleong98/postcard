@@ -1,14 +1,15 @@
 'use client'
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 export default function PostcardCustomizer() {
   const [currentSide, setCurrentSide] = useState('front');
   const [uploadedImage, setUploadedImage] = useState('/images/default-image.png'); // Default image
   const [selectedTool, setSelectedTool] = useState(null);
   const canvasRef = useRef(null);
+  const staticCanvasRef = useRef(null); // For static elements
   const isDrawing = useRef(false);
-
+  
   const handleFlip = () => {
     setCurrentSide(currentSide === 'front' ? 'back' : 'front');
   };
@@ -23,6 +24,25 @@ export default function PostcardCustomizer() {
       reader.readAsDataURL(file);
     }
   };
+
+  useEffect(() => {
+    const canvas = staticCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+
+    // CLear static canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw stamp box
+    ctx.strokeStyle = '#cccccc';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(canvas.width - 120 - 16, 16, 120, 160);
+
+    // Draw vertical line
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, 16);
+    ctx.lineTo(canvas.width / 2, canvas.height - 16);
+    ctx.stroke();
+  }, []);
 
   const startDrawing = (e) => {
     if (selectedTool && currentSide === 'back') {
@@ -40,10 +60,20 @@ export default function PostcardCustomizer() {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-    ctx.strokeStyle = selectedTool === 'pencil' ? '#000000' : 'rgba(0, 0, 0, 0.5)';
-    ctx.lineWidth = selectedTool === 'pencil' ? 2: 8;
-    ctx.stroke();
+    if (selectedTool === 'eraser') {
+      const size = 16; // Eraser size
+      ctx.clearRect(
+        e.clientX - rect.left - size / 2,
+        e.clientY - rect.top - size / 2,
+        size,
+        size
+      );
+    } else {
+      ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      ctx.strokeStyle = selectedTool === 'pencil' ? '#000000' : 'rgba(0, 0, 0, 0.5)';
+      ctx.lineWidth = selectedTool === 'pencil' ? 2 : 8;
+      ctx.stroke();
+    }
   };
 
   const stopDrawing = () => {
@@ -54,6 +84,12 @@ export default function PostcardCustomizer() {
       ctx.closePath(); // Close the path to ensure no connection between strokes
     }
   };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
@@ -95,6 +131,14 @@ export default function PostcardCustomizer() {
 
           {/* Back Side */}
           <div className="absolute w-full h-full rotate-y-180 backface-hidden bg-white shadow-md flex items-center justify-center">
+            {/* Static elements canvas */}
+            <canvas
+              ref={staticCanvasRef}
+              width={879}
+              height={591}
+              className='absolute inset-0 pointer-events-none'
+            ></canvas>
+            
             {/* Drawing canvas */}
             <canvas
               ref={canvasRef}
@@ -106,12 +150,6 @@ export default function PostcardCustomizer() {
               onMouseUp={stopDrawing}
               onMouseLeave={stopDrawing}
             ></canvas>
-            
-            {/* Default Postcard line */}
-            <div className="absolute top-6 bottom-6 left-1/2 w-[1px] bg-gray-300"></div>
-
-            {/* Stamp box */}
-            <div className="absolute top-6 right-6 w-[120px] h-[160px] border border-gray-300"></div>
           </div>
         </div>
       </div>
@@ -129,6 +167,18 @@ export default function PostcardCustomizer() {
           onClick={() => setSelectedTool('marker')}
         >
           🖊️
+        </button>
+        <button
+          className={`p-4 bg-gray-300 rounded-full shadow-md ${selectedTool === 'eraser' ? 'ring-4 ring-blue-500' : ''}`}
+          onClick={() => setSelectedTool('eraser')}
+        >          
+          🩹
+        </button>
+        <button
+          className="p-4 bg-red-500 text-white rounded-full shadow-md"
+          onClick={clearCanvas}
+        >
+          🗑️
         </button>
       </div>
 
