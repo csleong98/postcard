@@ -20,6 +20,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.draggable-textbox {
+  cursor: pointer;
+  padding: 16px;
+}
+
 .perspective {
   perspective: 1100px;
 }

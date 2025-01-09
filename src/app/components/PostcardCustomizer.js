@@ -9,6 +9,54 @@ export default function PostcardCustomizer() {
   const canvasRef = useRef(null);
   const staticCanvasRef = useRef(null); // For static elements
   const isDrawing = useRef(false);
+  let dragEl;
+  let dragHandleEl;
+  const lastPosition = {};
+
+  setupResizable();
+  setupDraggable();
+
+  function setupDraggable() {
+    dragHandleEl = document.querySelector('[data-drag-handle]');
+    dragHandleEl.addEventListener('mousedown', dragStart);
+    dragHandleEl.addEventListener('mouseup', dragEnd);
+    dragHandleEl.addEventListener('mouseout', dragEnd);
+  };
+
+  function setupResizable() {
+    const resizeEl = document.querySelector('[data-resizable]');
+    resizeEl.style.setProperty('resize', 'both');
+    resizeEl.style.setProperty('overflow', 'hidden');
+  };
+
+  function dragStart(event) {
+    dragEl = getDraggableAncestor(event.target);
+
+    dragEl.style.setProperty('position', 'absolute');
+    lastPosition.left = event.target.clientX;
+    lastPosition.top = event.target.clientY;
+    dragHandleEl.classList.add('dragging');
+    dragHandleEl.addEventListener('mousemove', dragMove);
+  };
+
+  function dragMove(event) {
+    const dragElRect = dragEl.getBoundingClientRect();
+    const newLeft = dragElRect.left + event.clientX - lastPosition.left;
+    const newTop = dragElRect.top + event.clientY - lastPosition.top;
+    dragEl.style.setProperty('left', `${newLeft}px`);
+    dragEl.style.setProperty('top', `${newTop}px`);
+    lastPosition.left = event.clientX;
+    lastPosition.top = event.clientY;
+
+    window.getSelection().removeAllRanges();
+  };
+
+  function dragEnd() {
+    dragHandleEl.classList.remove('dragging');
+
+    dragHandleEl.removeEventListener('mouseover', dragMove);
+    dragEl = null;
+  }
   
   const handleFlip = () => {
     setCurrentSide(currentSide === 'front' ? 'back' : 'front');
@@ -150,6 +198,16 @@ export default function PostcardCustomizer() {
               onMouseUp={stopDrawing}
               onMouseLeave={stopDrawing}
             ></canvas>
+            <div 
+              className='draggable-textbox bg-slate-200 border-r-2' style={{height:"200px", width: "200px"}}
+              data-draggable="true"
+              data-resizable="true"
+              data-drag-handle="true
+            >
+              <div className='text-slate-800'>
+                Textbox
+              </div>
+            </div>
           </div>
         </div>
       </div>
