@@ -11,19 +11,9 @@ export default function PostcardCustomizer() {
   const staticCanvasRef = useRef(null);
   const isDrawing = useRef(false);
   const containerRef = useRef(null);
-
-  // Enhanced textbox state
-  const [textboxes, setTextboxes] = useState([]);
-  const [selectedTextbox, setSelectedTextbox] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isResizing, setIsResizing] = useState(false);
-  const [resizeDirection, setResizeDirection] = useState(null);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [addingTextbox, setAddingTextbox] = useState(false);
-
-  // Constants for canvas boundaries
-  const CANVAS_PADDING = 36; // equivalent to inset-9
-  const MIN_BOX_SIZE = 50;
+  const [isTextareaActive, setIsTextareaActive] = useState(false);
+  const [selectedFont, setSelectedFont] = useState('Roboto');
+  const [textColor, setTextColor] = useState('#000000');
 
   const handleFlip = () => {
     setCurrentSide(currentSide === 'front' ? 'back' : 'front');
@@ -101,148 +91,14 @@ export default function PostcardCustomizer() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
-  // Function to ensure position is within bounds
-  const keepInBounds = (x, y, width, height) => {
-    const maxX = 879 - CANVAS_PADDING - width;
-    const maxY = 591 - CANVAS_PADDING - height;
-    const minX = CANVAS_PADDING;
-    const minY = CANVAS_PADDING;
-
-    return {
-      x: Math.min(Math.max(x, minX), maxX),
-      y: Math.min(Math.max(y, minY), maxY)
-    };
-  };
-
-  // Handle textbox button click
-  const handleTextboxButtonClick = () => {
-    setSelectedTool('textbox');
-    setAddingTextbox(true);
-  };
-
-  // Handle canvas click for textbox placement
-  const handleCanvasClick = (e) => {
-    if (addingTextbox && selectedTool === 'textbox') {
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      const boundedPosition = keepInBounds(x, y, 200, 100);
-
-      const newBox = {
-        id: Date.now(),
-        ...boundedPosition,
-        width: 200,
-        height: 100,
-        text: 'Enter text here...',
-      };
-
-      setTextboxes([...textboxes, newBox]);
-      setSelectedTextbox(newBox.id);
-      setAddingTextbox(false);
-    }
-  };
-
-  // Handle textbox selection and drag start
-  const handleTextboxMouseDown = (e, boxId, resizeHandle = null) => {
-    e.stopPropagation();
-    const rect = containerRef.current.getBoundingClientRect();
-
-    if (resizeHandle) {
-      setIsResizing(true);
-      setResizeDirection(resizeHandle);
-    } else {
-      setIsDragging(true);
-    }
-
-    setSelectedTextbox(boxId);
-    setDragStart({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    });
-  };
-
-  // Handle mouse move for drag and resize
-  const handleMouseMove = (e) => {
-    if (!isDragging && !isResizing) return;
-
-    const rect = containerRef.current.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const currentY = e.clientY - rect.top;
-    const deltaX = currentX - dragStart.x;
-    const deltaY = currentY - dragStart.y;
-
-    setTextboxes(boxes => boxes.map(box => {
-      if (box.id === selectedTextbox) {
-        if (isDragging) {
-          const newPos = keepInBounds(
-            box.x + deltaX,
-            box.y + deltaY,
-            box.width,
-            box.height
-          );
-          return { ...box, ...newPos };
-        }
-
-        if (isResizing) {
-          let newWidth = box.width;
-          let newHeight = box.height;
-          let newX = box.x;
-          let newY = box.y;
-
-          switch (resizeDirection) {
-            case 'se':
-              newWidth = Math.max(MIN_BOX_SIZE, box.width + deltaX);
-              newHeight = Math.max(MIN_BOX_SIZE, box.height + deltaY);
-              break;
-            case 'sw':
-              newWidth = Math.max(MIN_BOX_SIZE, box.width - deltaX);
-              newHeight = Math.max(MIN_BOX_SIZE, box.height + deltaY);
-              newX = box.x + deltaX;
-              break;
-            case 'ne':
-              newWidth = Math.max(MIN_BOX_SIZE, box.width + deltaX);
-              newHeight = Math.max(MIN_BOX_SIZE, box.height - deltaY);
-              newY = box.y + deltaY;
-              break;
-            case 'nw':
-              newWidth = Math.max(MIN_BOX_SIZE, box.width - deltaX);
-              newHeight = Math.max(MIN_BOX_SIZE, box.height - deltaY);
-              newX = box.x + deltaX;
-              newY = box.y + deltaY;
-              break;
-          }
-
-          const boundedPosition = keepInBounds(newX, newY, newWidth, newHeight);
-          return {
-            ...box,
-            ...boundedPosition,
-            width: newWidth,
-            height: newHeight
-          };
-        }
-      }
-      return box;
-    }));
-
-    setDragStart({ x: currentX, y: currentY });
-  };
-
-  // Handle mouse up to stop drag/resize
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    setIsResizing(false);
-    setResizeDirection(null);
-  };
-
-  useEffect(() => {
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, isResizing, selectedTextbox]);
+  // Font options
+  const fontOptions = [
+    { name: 'Homemade Apple', value: 'Homemade Apple' },
+    { name: 'Dancing Script', value: 'Dancing Script' },
+    { name: 'Caveat', value: 'Caveat' },
+    { name: 'Indie Flower', value: 'Indie Flower' },
+    { name: 'Shadows Into Light', value: 'Shadows Into Light' },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
@@ -251,126 +107,114 @@ export default function PostcardCustomizer() {
         Design your own postcard and send it to anyone!
       </h1>
 
-      {/* Postcard Canvas */}
-      <div className="relative w-[879.04px] h-[591.04px] perspective">
-        <div
-          className={`absolute inset-0 w-full h-full transition-transform duration-700 transform-style-preserve-3d ${currentSide === 'back' ? 'rotate-y-180' : ''
-            }`}
-        >
-          {/* Front Side */}
-          <div className="absolute w-full h-full backface-hidden bg-white shadow-md flex items-center justify-center">
-            <img
-              src={uploadedImage}
-              alt="Postcard Front"
-              className="w-full h-full object-cover p-4 box-border"
-            />
-
-            <div className="absolute flex items-center justify-center">
-              <button
-                aria-label='Upload image'
-                className="px-4 py-2 bg-gray-300 text-gray-900 font-bold rounded-md cursor-pointer flex items-center justify-center"
-                onClick={() => document.getElementById('imageUpload').click()}
-              >
-                Upload image
-              </button>
+      <div className="relative">
+        {/* Font and Color Controls */}
+        {isTextareaActive && (
+          <div className="absolute -left-[calc(200px+24px)] top-0 w-[200px] flex flex-col gap-4 controls-container">
+            <select 
+              value={selectedFont}
+              onChange={(e) => setSelectedFont(e.target.value)}
+              className="w-full p-2 border rounded-md bg-white shadow-sm"
+            >
+              {fontOptions.map((font) => (
+                <option 
+                  key={font.value} 
+                  value={font.value}
+                  style={{ fontFamily: font.value }}
+                >
+                  {font.name}
+                </option>
+              ))}
+            </select>
+            
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-gray-600">Text Color</label>
               <input
-                id="imageUpload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageUpload}
+                type="color"
+                value={textColor}
+                onChange={(e) => setTextColor(e.target.value)}
+                className="w-full h-10 cursor-pointer"
               />
             </div>
           </div>
+        )}
 
-          {/* Back Side */}
-          <div className="absolute w-full h-full rotate-y-180 backface-hidden bg-white shadow-md flex items-center justify-center">
-            {/* Static elements canvas */}
-            <canvas
-              ref={staticCanvasRef}
-              width={879}
-              height={591}
-              className='absolute inset-0 pointer-events-none'
-            ></canvas>
+        {/* Postcard Canvas */}
+        <div className="relative w-[879.04px] h-[591.04px] perspective">
+          <div
+            className={`absolute inset-0 w-full h-full transition-transform duration-700 transform-style-preserve-3d ${currentSide === 'back' ? 'rotate-y-180' : ''
+              }`}
+          >
+            {/* Front Side */}
+            <div className="absolute w-full h-full backface-hidden bg-white shadow-md flex items-center justify-center">
+              <img
+                src={uploadedImage}
+                alt="Postcard Front"
+                className="w-full h-full object-cover p-4 box-border"
+              />
 
-            {/* Drawing canvas */}
-            <canvas
-              ref={canvasRef}
-              width={879}
-              height={591}
-              className='absolute inset-9'
-              onMouseDown={startDrawing}
-              onMouseMove={draw}
-              onMouseUp={stopDrawing}
-              onMouseLeave={stopDrawing}
-            ></canvas>
-            {/* Textbox container */}
-            <div
-              ref={containerRef}
-              className={`absolute inset-9 overflow-hidden ${selectedTool === 'textbox' ? 'pointer-events-auto' : 'pointer-events-none'
-                }`}
-              onClick={handleCanvasClick}
-            >
-              {textboxes.map((box) => (
-                <div
-                  key={box.id}
-                  className="absolute"
-                  style={{
-                    left: `${box.x}px`,
-                    top: `${box.y}px`,
-                    width: `${box.width}px`,
-                    height: `${box.height}px`,
-                  }}
+              <div className="absolute flex items-center justify-center">
+                <button
+                  aria-label='Upload image'
+                  className="px-4 py-2 bg-gray-300 text-gray-900 font-bold rounded-md cursor-pointer flex items-center justify-center"
+                  onClick={() => document.getElementById('imageUpload').click()}
                 >
-                  {/* Textbox content */}
-                  <div
-                    className={`relative w-full h-full border-2 ${selectedTextbox === box.id ? 'border-blue-500' : 'border-gray-300'
-                      }`}
-                    onMouseDown={(e) => handleTextboxMouseDown(e, box.id)}
-                  >
-                    <textarea
-                      value={box.text}
-                      onChange={(e) => {
-                        const updatedBoxes = textboxes.map(b =>
-                          b.id === box.id ? { ...b, text: e.target.value } : b
-                        );
-                        setTextboxes(updatedBoxes);
-                      }}
-                      className="w-full h-full p-2 resize-none text-gray-900 bg-transparent"
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                  Upload image
+                </button>
+                <input
+                  id="imageUpload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+              </div>
+            </div>
 
-                    {/* Resize handles - only show when selected */}
-                    {selectedTextbox === box.id && (
-                      <>
-                        {['nw', 'ne', 'sw', 'se'].map(handle => (
-                          <div
-                            key={handle}
-                            className={`absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-${handle}-resize
-                              ${handle.includes('n') ? 'top-0' : 'bottom-0'}
-                              ${handle.includes('w') ? 'left-0' : 'right-0'}
-                              -translate-x-1/2 -translate-y-1/2`}
-                            onMouseDown={(e) => handleTextboxMouseDown(e, box.id, handle)}
-                          />
-                        ))}
-                      </>
-                    )}
+            {/* Back Side */}
+            <div className="absolute w-full h-full rotate-y-180 backface-hidden bg-white shadow-md flex items-center justify-center">
+              {/* Static elements canvas */}
+              <canvas
+                ref={staticCanvasRef}
+                width={879}
+                height={591}
+                className='absolute inset-0 pointer-events-none'
+              ></canvas>
 
-                    {/* Delete button */}
-                    {selectedTextbox === box.id && (
-                      <button
-                        className="absolute -top-8 right-0 p-1 bg-white rounded shadow hover:bg-gray-100"
-                        onClick={() => {
-                          setTextboxes(textboxes.filter(b => b.id !== box.id));
-                          setSelectedTextbox(null);
-                        }}
-                      >
-                        ❌
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+              {/* Drawing canvas */}
+              <canvas
+                ref={canvasRef}
+                width={879}
+                height={591}
+                className='absolute inset-9'
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onMouseLeave={stopDrawing}
+              ></canvas>
+
+              {/* Add Message Textarea */}
+              <div className="absolute inset-9 flex">
+                <textarea
+                  className="w-[50%] h-full resize-none p-4 bg-transparent focus:outline-none"
+                  placeholder="Type your message here..."
+                  style={{
+                    fontFamily: selectedFont,
+                    color: textColor
+                  }}
+                  onFocus={() => setIsTextareaActive(true)}
+                  onBlur={(e) => {
+                    // Add a small delay to check if the next focus target is the controls
+                    setTimeout(() => {
+                      const activeElement = document.activeElement;
+                      const isControlsContainer = activeElement?.closest('.controls-container');
+                      if (!isControlsContainer) {
+                        setIsTextareaActive(false);
+                      }
+                    }, 0);
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -401,12 +245,6 @@ export default function PostcardCustomizer() {
           onClick={clearCanvas}
         >
           🗑️
-        </button>
-        <button
-          className={`p-4 bg-gray-300 rounded-full shadow-md ${selectedTool === 'textbox' ? 'ring-4 ring-blue-500' : ''}`}
-          onClick={handleTextboxButtonClick}
-        >
-          📝
         </button>
       </div>
 
