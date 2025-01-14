@@ -348,6 +348,30 @@ export default function PostcardCustomizer() {
     emailjs.init("Mra82Sn-VgBPLdEWV");
   }, []);
 
+  // Draw static elements on back side
+  useEffect(() => {
+    const canvas = staticCanvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Set styles for lines and box
+      ctx.strokeStyle = '#cccccc';
+      ctx.lineWidth = 1;
+      
+      // Draw stamp box in top right
+      ctx.strokeRect(canvas.width - 120 - 16, 16, 120, 160);
+      
+      // Draw vertical line in middle
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 16);
+      ctx.lineTo(canvas.width / 2, canvas.height - 16);
+      ctx.stroke();
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       {/* Title */}
@@ -356,37 +380,6 @@ export default function PostcardCustomizer() {
       </h1>
 
       <div className="relative">
-        {/* Font and Color Controls */}
-        {isTextareaActive && (
-          <div className="absolute -left-[calc(200px+24px)] top-0 w-[200px] flex flex-col gap-4 controls-container">
-            <select 
-              value={selectedFont}
-              onChange={(e) => setSelectedFont(e.target.value)}
-              className="w-full p-2 border rounded-md bg-white shadow-sm"
-            >
-              {fontOptions.map((font) => (
-                <option 
-                  key={font.value} 
-                  value={font.value}
-                  style={{ fontFamily: font.value }}
-                >
-                  {font.name}
-                </option>
-              ))}
-            </select>
-            
-            <div className="flex flex-col gap-2">
-              <label className="text-sm text-gray-600">Text Color</label>
-              <input
-                type="color"
-                value={textColor}
-                onChange={(e) => setTextColor(e.target.value)}
-                className="w-full h-10 cursor-pointer"
-              />
-            </div>
-          </div>
-        )}
-
         {/* Postcard Canvas */}
         <div className="relative w-[879.04px] h-[591.04px] perspective">
           <div
@@ -460,10 +453,16 @@ export default function PostcardCustomizer() {
         {/* Toolbar - now positioned at bottom center */}
         <div className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-[calc(100%+24px)]">
           <Toolbar
+            currentSide={currentSide}
             selectedTool={selectedTool}
             drawingColor={drawingColor}
+            textColor={textColor}
+            selectedFont={selectedFont}
+            fontOptions={fontOptions}
             onToolSelect={setSelectedTool}
             onColorChange={setDrawingColor}
+            onTextColorChange={setTextColor}
+            onFontChange={setSelectedFont}
             onClear={clearCanvas}
             onUpload={() => document.getElementById('imageUpload').click()}
             onDownload={() => {
@@ -479,6 +478,13 @@ export default function PostcardCustomizer() {
             onFlip={handleFlip}
           />
         </div>
+
+        {/* Remove the font controls since they're now in the toolbar */}
+        {isTextareaActive && currentSide === 'back' && (
+          <div className="absolute -left-[calc(200px+24px)] top-0 w-[200px] flex flex-col gap-4 controls-container">
+            {/* Remove the font and color controls since they're now in the toolbar */}
+          </div>
+        )}
       </div>
 
       {showPreview && (
