@@ -2,6 +2,15 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import emailjs from '@emailjs/browser';
+import { 
+  Pencil, 
+  PencilLine, 
+  Eraser, 
+  Trash, 
+  UploadSimple,
+  Export 
+} from "@phosphor-icons/react";
+import Toolbar from './Toolbar';
 
 // Add these icon components
 const WhatsAppIcon = () => (
@@ -378,57 +387,6 @@ export default function PostcardCustomizer() {
           </div>
         )}
 
-        {/* Drawing Tools - Now outside the card */}
-        <div className="absolute -right-[84px] top-1/2 flex flex-col gap-4 transform -translate-y-1/2">
-          <button
-            className={`p-4 bg-gray-300 rounded-full shadow-md ${selectedTool === 'pencil' ? 'ring-4 ring-blue-500' : ''}`}
-            onClick={() => setSelectedTool('pencil')}
-          >
-            ✏️
-          </button>
-          <button
-            className={`p-4 bg-gray-300 rounded-full shadow-md ${selectedTool === 'marker' ? 'ring-4 ring-blue-500' : ''}`}
-            onClick={() => setSelectedTool('marker')}
-          >
-            🖊️
-          </button>
-          <button
-            className={`p-4 bg-gray-300 rounded-full shadow-md ${selectedTool === 'eraser' ? 'ring-4 ring-blue-500' : ''}`}
-            onClick={() => setSelectedTool('eraser')}
-          >
-            🩹
-          </button>
-          <button
-            className="p-4 bg-red-500 text-white rounded-full shadow-md"
-            onClick={clearCanvas}
-          >
-            🗑️
-          </button>
-          
-          {/* Color Picker for drawing tools */}
-          <div className="flex flex-col gap-2 items-center">
-            <label className="text-sm text-gray-600">Draw Color</label>
-            <input
-              type="color"
-              value={drawingColor}
-              onChange={(e) => setDrawingColor(e.target.value)}
-              className="w-10 h-10 cursor-pointer"
-            />
-          </div>
-          
-          {/* Separator */}
-          <div className="border-t border-gray-300 w-full my-2"></div>
-          
-          {/* Export button */}
-          <button
-            className="p-4 bg-gray-300 rounded-full shadow-md hover:bg-gray-400"
-            onClick={generatePreview}
-            title="Export Postcard"
-          >
-            📤
-          </button>
-        </div>
-
         {/* Postcard Canvas */}
         <div className="relative w-[879.04px] h-[591.04px] perspective">
           <div
@@ -455,22 +413,13 @@ export default function PostcardCustomizer() {
                 className="w-full h-full object-cover p-4 box-border"
               />
 
-              <div className="absolute flex items-center justify-center">
-                <button
-                  aria-label='Upload image'
-                  className="px-4 py-2 bg-gray-300 text-gray-900 font-bold rounded-md cursor-pointer flex items-center justify-center"
-                  onClick={() => document.getElementById('imageUpload').click()}
-                >
-                  Upload image
-                </button>
-                <input
-                  id="imageUpload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-              </div>
+              <input
+                id="imageUpload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageUpload}
+              />
             </div>
 
             {/* Back Side */}
@@ -507,15 +456,30 @@ export default function PostcardCustomizer() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Flip Button */}
-      <button
-        onClick={handleFlip}
-        className="mt-6 px-4 py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
-      >
-        Flip to {currentSide === 'front' ? 'Back' : 'Front'}
-      </button>
+        {/* Toolbar - now positioned at bottom center */}
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-[calc(100%+24px)]">
+          <Toolbar
+            selectedTool={selectedTool}
+            drawingColor={drawingColor}
+            onToolSelect={setSelectedTool}
+            onColorChange={setDrawingColor}
+            onClear={clearCanvas}
+            onUpload={() => document.getElementById('imageUpload').click()}
+            onDownload={() => {
+              if (showPreview) {
+                const link = document.createElement('a');
+                link.href = showPreview;
+                link.download = 'my-postcard.png';
+                link.click();
+              } else {
+                generatePreview();
+              }
+            }}
+            onFlip={handleFlip}
+          />
+        </div>
+      </div>
 
       {showPreview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
