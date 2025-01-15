@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react';
-import emailjs from '@emailjs/browser';
 import { 
   Pencil, 
   PencilLine, 
@@ -71,12 +70,6 @@ export default function PostcardCustomizer() {
   const [textColor, setTextColor] = useState('#000000');
   const [drawingColor, setDrawingColor] = useState('#000000');
   const [showPreview, setShowPreview] = useState(false);
-  const [showEmailForm, setShowEmailForm] = useState(false);
-  const [emailDetails, setEmailDetails] = useState({
-    to: '',
-    subject: 'I sent you a postcard!',
-    message: 'Hey, check out this postcard I made for you!'
-  });
 
   const handleFlip = () => {
     setCurrentSide(currentSide === 'front' ? 'back' : 'front');
@@ -295,88 +288,11 @@ export default function PostcardCustomizer() {
     img.src = uploadedImage;
   };
 
-  const handleEmail = async () => {
-    try {
-      const response = await fetch(showPreview);
-      if (!response.ok) {
-        throw new Error('Failed to fetch preview image');
-      }
-      
-      const blob = await response.blob();
-      const reader = new FileReader();
-      
-      reader.onload = async () => {
-        const base64data = reader.result;
-        console.log('Original image size:', Math.round(base64data.length / 1024), 'KB');
-        
-        // Compress the image
-        const compressedImage = await compressImage(base64data);
-        console.log('Compressed image size:', Math.round(compressedImage.length / 1024), 'KB');
-        
-        try {
-          const emailResponse = await emailjs.send(
-            'service_e28809c',
-            'template_t0qxfu9',
-            {
-              to_email: emailDetails.to,
-              subject: emailDetails.subject,
-              message: emailDetails.message,
-              image_url: compressedImage
-            },
-            'Mra82Sn-VgBPLdEWV'
-          );
-          
-          console.log('EmailJS Response:', emailResponse);
-          alert('Postcard sent successfully!');
-          setShowEmailForm(false);
-          setShowPreview(false);
-        } catch (emailError) {
-          console.error('EmailJS Error Details:', emailError);
-          alert(`Failed to send email: ${emailError.message}`);
-        }
-      };
-      
-      reader.readAsDataURL(blob);
-    } catch (error) {
-      console.error('Main Error:', error);
-      alert(`Error: ${error.message}`);
-    }
-  };
-
-  // Initialize EmailJS in useEffect
-  useEffect(() => {
-    emailjs.init("Mra82Sn-VgBPLdEWV");
-  }, []);
-
-  // Draw static elements on back side
-  useEffect(() => {
-    const canvas = staticCanvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      
-      // Clear the canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Set styles for lines and box
-      ctx.strokeStyle = '#cccccc';
-      ctx.lineWidth = 1;
-      
-      // Draw stamp box in top right
-      ctx.strokeRect(canvas.width - 120 - 16, 16, 120, 160);
-      
-      // Draw vertical line in middle
-      ctx.beginPath();
-      ctx.moveTo(canvas.width / 2, 16);
-      ctx.lineTo(canvas.width / 2, canvas.height - 16);
-      ctx.stroke();
-    }
-  }, []);
-
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       {/* Title */}
       <h1 className="text-slate-900 text-4xl font-bold mb-8 text-center">
-        Design your own postcard and send it to anyone!
+        Design your own postcard!
       </h1>
 
       <div className="relative">
@@ -494,10 +410,7 @@ export default function PostcardCustomizer() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Postcard Preview</h2>
               <button
-                onClick={() => {
-                  setShowPreview(false);
-                  setShowEmailForm(false);
-                }}
+                onClick={() => setShowPreview(false)}
                 className="text-gray-500 hover:text-gray-700"
               >
                 ✕
@@ -509,81 +422,21 @@ export default function PostcardCustomizer() {
               className="max-w-full"
             />
             <div className="mt-4">
-              {showEmailForm ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Recipient's Email
-                    </label>
-                    <input
-                      type="email"
-                      value={emailDetails.to}
-                      onChange={(e) => setEmailDetails({...emailDetails, to: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-md"
-                      placeholder="Enter email address"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Subject
-                    </label>
-                    <input
-                      type="text"
-                      value={emailDetails.subject}
-                      onChange={(e) => setEmailDetails({...emailDetails, subject: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-md"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Message
-                    </label>
-                    <textarea
-                      value={emailDetails.message}
-                      onChange={(e) => setEmailDetails({...emailDetails, message: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-md"
-                      rows={3}
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => setShowEmailForm(false)}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleEmail}
-                      disabled={!emailDetails.to}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-blue-300"
-                    >
-                      Send Email
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex justify-end gap-4">
-                  <button
-                    onClick={() => setShowPreview(false)}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md"
-                  >
-                    Close
-                  </button>
-                  <a
-                    href={showPreview}
-                    download="my-postcard.png"
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                  >
-                    Download
-                  </a>
-                  <button
-                    onClick={() => setShowEmailForm(true)}
-                    className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
-                  >
-                    Send via Email
-                  </button>
-                </div>
-              )}
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md"
+                >
+                  Close
+                </button>
+                <a
+                  href={showPreview}
+                  download="my-postcard.png"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                >
+                  Download
+                </a>
+              </div>
             </div>
           </div>
         </div>

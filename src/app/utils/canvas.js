@@ -5,33 +5,6 @@
  * These functions handle drawing, image processing, and canvas setup.
  */
 
-// Convert a canvas to a compressed image
-export const compressImage = (base64String) => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.src = base64String;
-    img.onload = () => {
-      // Create a temporary canvas
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      // Calculate new dimensions (reduce by 50%)
-      const newWidth = img.width * 0.5;
-      const newHeight = img.height * 0.5;
-      
-      // Set canvas size
-      canvas.width = newWidth;
-      canvas.height = newHeight;
-      
-      // Draw and compress
-      ctx.drawImage(img, 0, 0, newWidth, newHeight);
-      
-      // Convert to JPEG with 70% quality
-      resolve(canvas.toDataURL('image/jpeg', 0.7));
-    };
-  });
-};
-
 // Draw static elements on the back of the postcard
 export const drawPostcardBack = (canvas) => {
   const ctx = canvas.getContext('2d');
