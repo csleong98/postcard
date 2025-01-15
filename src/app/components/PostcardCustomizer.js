@@ -67,7 +67,7 @@ export default function PostcardCustomizer() {
   const isDrawing = useRef(false);
   const containerRef = useRef(null);
   const [isTextareaActive, setIsTextareaActive] = useState(false);
-  const [selectedFont, setSelectedFont] = useState('Roboto');
+  const [selectedFont, setSelectedFont] = useState('Caveat');
   const [textColor, setTextColor] = useState('#000000');
   const [drawingColor, setDrawingColor] = useState('#000000');
   const [showPreview, setShowPreview] = useState(false);
@@ -432,7 +432,8 @@ export default function PostcardCustomizer() {
                   placeholder="Type your message here..."
                   style={{
                     fontFamily: selectedFont,
-                    color: textColor
+                    color: textColor,
+                    fontSize: '20px'
                   }}
                   onFocus={() => setIsTextareaActive(true)}
                   onBlur={(e) => {

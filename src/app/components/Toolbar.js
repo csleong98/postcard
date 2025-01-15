@@ -33,6 +33,9 @@ const Toolbar = (props) => {
 
   useEffect(() => {
     function handleClickOutside(event) {
+      // Don't close if clicking on the color picker dialog
+      if (event.target.type === 'color') return;
+
       const clickedOutsideColorPicker = colorPickerRef.current && 
         !colorPickerRef.current.contains(event.target) &&
         !toolbarRef.current.contains(event.target);
@@ -63,30 +66,6 @@ const Toolbar = (props) => {
     }
   }, [showColorPicker]);
 
-  const ColorPickerButton = ({ color, onChange }) => (
-    <div ref={colorPickerRef} className="relative">
-      <IconButton
-        isColorIndicator
-        color={color}
-        isActive={showColorPicker}
-        onClick={() => setShowColorPicker(!showColorPicker)}
-      />
-      <input
-        ref={colorPickerInputRef}
-        type="color"
-        value={color}
-        onChange={(e) => onChange(e.target.value)}
-        className="absolute opacity-0 w-px h-px"
-        style={{ 
-          top: '-6px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          pointerEvents: showColorPicker ? 'auto' : 'none'
-        }}
-      />
-    </div>
-  );
-
   const FontDropdown = () => (
     <div ref={dropdownRef} className="relative">
       <button 
@@ -102,7 +81,6 @@ const Toolbar = (props) => {
           weight="bold"
         />
       </button>
-
       {showFontDropdown && (
         <div className="absolute bottom-full left-0 mb-2 w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 max-h-[200px] overflow-y-auto">
           {props.fontOptions.map((font) => (
@@ -124,7 +102,7 @@ const Toolbar = (props) => {
     </div>
   );
 
-  const FrontTools = () => (
+  const renderFrontTools = () => (
     <>
       <IconButton
         icon={Pencil}
@@ -136,10 +114,28 @@ const Toolbar = (props) => {
         isActive={props.selectedTool === 'marker'}
         onClick={() => props.onToolSelect('marker')}
       />
-      <ColorPickerButton 
-        color={props.drawingColor} 
-        onChange={props.onColorChange}
-      />
+      <div ref={colorPickerRef} className="relative">
+        <IconButton
+          isColorIndicator
+          color={props.drawingColor}
+          isActive={showColorPicker}
+          onClick={() => setShowColorPicker(!showColorPicker)}
+        />
+        <input
+          ref={colorPickerInputRef}
+          type="color"
+          value={props.drawingColor}
+          onChange={(e) => props.onColorChange(e.target.value)}
+          className="absolute opacity-0 w-px h-px"
+          style={{ 
+            top: '-6px',
+            left: '1%',
+            right: '1%',
+            transform: 'translateX(-50%)',
+            pointerEvents: showColorPicker ? 'auto' : 'none'
+          }}
+        />
+      </div>
       <IconButton
         icon={Eraser}
         isActive={props.selectedTool === 'eraser'}
@@ -156,20 +152,37 @@ const Toolbar = (props) => {
     </>
   );
 
-  const BackTools = () => (
+  const renderBackTools = () => (
     <>
       <FontDropdown />
-      <ColorPickerButton 
-        color={props.textColor} 
-        onChange={props.onTextColorChange}
-      />
+      <div ref={colorPickerRef} className="relative">
+        <IconButton
+          isColorIndicator
+          color={props.textColor}
+          isActive={showColorPicker}
+          onClick={() => setShowColorPicker(!showColorPicker)}
+        />
+        <input
+          ref={colorPickerInputRef}
+          type="color"
+          value={props.textColor}
+          onChange={(e) => props.onTextColorChange(e.target.value)}
+          className="absolute opacity-0 w-px h-px"
+          style={{ 
+            top: '-6px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: showColorPicker ? 'auto' : 'none'
+          }}
+        />
+      </div>
     </>
   );
 
   return (
     <div className="relative" ref={toolbarRef}>
       <div className="inline-flex items-center p-2.5 gap-4 rounded-2xl border border-[#E4E4E4] bg-white shadow-[0px_1px_4px_0px_rgba(0,0,0,0.10)] transition-all duration-300 ease-in-out">
-        {props.currentSide === 'front' ? <FrontTools /> : <BackTools />}
+        {props.currentSide === 'front' ? renderFrontTools() : renderBackTools()}
         <Separator />
         <IconButton
           icon={DownloadSimple}
