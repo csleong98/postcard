@@ -43,6 +43,7 @@ export default function PostcardCustomizer() {
   const [textColor, setTextColor] = useState('#000000');
   const [drawingColor, setDrawingColor] = useState('#000000');
   const [showPreview, setShowPreview] = useState(false);
+  const [previewLayout, setPreviewLayout] = useState('horizontal');
 
   const handleFlip = () => {
     setCurrentSide(currentSide === 'front' ? 'back' : 'front');
@@ -67,6 +68,7 @@ export default function PostcardCustomizer() {
     ctx.strokeStyle = '#cccccc';
     ctx.lineWidth = 1;
     ctx.strokeRect(canvas.width - 120 - 16, 16, 120, 160);
+    
     ctx.beginPath();
     ctx.moveTo(canvas.width / 2, 16);
     ctx.lineTo(canvas.width / 2, canvas.height - 16);
@@ -132,107 +134,99 @@ export default function PostcardCustomizer() {
   const generatePreview = () => {
     // Create a temporary canvas for the combined preview
     const previewCanvas = document.createElement('canvas');
-    const padding = 16; // Same padding as editing mode
-    const cardWidth = 879;
-    const cardHeight = 591;
-    const spacing = 40; // Space between title and cards
-    const totalHeight = cardHeight * 2 + spacing * 3; // Height for title + two cards + spacing
     
-    // Add extra width for padding and shadow
-    previewCanvas.width = cardWidth + (padding * 2);
-    previewCanvas.height = totalHeight + (padding * 2);
+    // Set canvas dimensions based on layout
+    let canvasWidth, canvasHeight;
+    switch(previewLayout) {
+      case 'vertical':
+        canvasWidth = 1920;
+        canvasHeight = 1080;
+        break;
+      case 'square':
+        canvasWidth = 800;
+        canvasHeight = 800;
+        break;
+      case 'horizontal':
+      default:
+        canvasWidth = 1600;
+        canvasHeight = 800;
+    }
+    
+    previewCanvas.width = canvasWidth;
+    previewCanvas.height = canvasHeight;
     const ctx = previewCanvas.getContext('2d');
 
-    // Set white background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
-
-    // Add title
-    ctx.fillStyle = '#000000';
-    ctx.font = '24px Arial';
-    ctx.fillText('Hey, you got mail!', padding, spacing);
-
-    // Function to draw card shadow
-    const drawCardShadow = (x, y, width, height) => {
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
-      ctx.shadowBlur = 10;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 2;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(x, y, width, height);
-      // Reset shadow
-      ctx.shadowColor = 'transparent';
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
-    };
+    // Draw gradient background
+    const gradient = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
+    gradient.addColorStop(0, '#E5FFE6');  // Light mint green
+    gradient.addColorStop(1, '#FFF3D6');  // Light warm yellow
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
     const img = new Image();
     img.onload = () => {
-      // Draw front card with shadow
-      const frontY = spacing + padding;
-      drawCardShadow(padding, frontY, cardWidth, cardHeight);
-      
-      // Draw front content
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(padding, frontY, cardWidth, cardHeight);
-      ctx.clip();
-      
-      // Fill white background first
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(padding, frontY, cardWidth, cardHeight);
-      
-      // Draw background image with padding (4px inset from card edges)
-      const imageInset = 16;  // Same as p-4 in the editing mode
-      ctx.drawImage(
-        img, 
-        padding + imageInset, 
-        frontY + imageInset, 
-        cardWidth - (imageInset * 2), 
-        cardHeight - (imageInset * 2)
-      );
-      
-      // Draw any drawings on top, also with padding
-      ctx.drawImage(
-        frontCanvasRef.current, 
-        padding + imageInset, 
-        frontY + imageInset, 
-        cardWidth - (imageInset * 2), 
-        cardHeight - (imageInset * 2)
-      );
-      ctx.restore();
+      // Calculate card dimensions and positions based on layout
+      const cardWidth = 879;
+      const cardHeight = 591;
+      let frontScale, backScale, frontX, frontY, backX, backY;
 
-      // Draw back card with shadow
-      const backY = frontY + cardHeight + spacing;
-      drawCardShadow(padding, backY, cardWidth, cardHeight);
-      
-      // Draw back content
+      switch(previewLayout) {
+        case 'vertical':
+          frontScale = 0.65;
+          backScale = 0.65;
+          frontX = (canvasWidth - cardWidth * frontScale) / 2;
+          frontY = canvasHeight * 0.15;
+          backX = (canvasWidth - cardWidth * backScale) / 2;
+          backY = frontY + (cardHeight * frontScale) + 40;
+          break;
+        case 'square':
+          frontScale = 0.5;
+          backScale = 0.5;
+          frontX = (canvasWidth - cardWidth * frontScale) / 2;
+          frontY = (canvasHeight - (cardHeight * frontScale * 2 + 30)) / 2;
+          backX = frontX;
+          backY = frontY + (cardHeight * frontScale) + 30;
+          break;
+        case 'horizontal':
+        default:
+          frontScale = 0.6;
+          backScale = 0.6;
+          frontX = canvasWidth * 0.15;
+          frontY = (canvasHeight - cardHeight * frontScale) / 2;
+          backX = canvasWidth * 0.55;
+          backY = frontY;
+      }
+
+      // Draw front card with shadow
       ctx.save();
-      ctx.beginPath();
-      ctx.rect(padding, backY, cardWidth, cardHeight);
-      ctx.clip();
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(padding, backY, cardWidth, cardHeight);
-      
-      // Draw static elements (lines and stamp box)
-      ctx.drawImage(staticCanvasRef.current, padding, backY);
-      
-      // Get textarea content and style
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+      ctx.shadowBlur = 20;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 4;
+
+      // Draw front card
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(frontX, frontY, cardWidth * frontScale, cardHeight * frontScale);
+      ctx.drawImage(img, frontX, frontY, cardWidth * frontScale, cardHeight * frontScale);
+      ctx.drawImage(frontCanvasRef.current, frontX, frontY, cardWidth * frontScale, cardHeight * frontScale);
+
+      // Draw back card
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(backX, backY, cardWidth * backScale, cardHeight * backScale);
+      ctx.drawImage(staticCanvasRef.current, backX, backY, cardWidth * backScale, cardHeight * backScale);
+
+      // Draw text content
       const textarea = document.querySelector('textarea');
       if (textarea) {
-        ctx.font = `16px ${selectedFont}`;
+        ctx.font = `${16 * backScale}px ${selectedFont}`;
         ctx.fillStyle = textColor;
         
-        // Split text into lines first (handle Enter/newlines)
         const lines = textarea.value.split('\n');
-        let y = backY + 36; // Starting y position for text
-        const maxWidth = (cardWidth / 2) - 40;
-        const x = padding + 36;
+        let y = backY + (36 * backScale);
+        const maxWidth = (cardWidth * backScale / 2) - (40 * backScale);
+        const x = backX + (36 * backScale);
 
-        // Process each line
         lines.forEach(text => {
-          // Then handle word wrap within each line
           const words = text.split(' ');
           let line = '';
           
@@ -242,20 +236,17 @@ export default function PostcardCustomizer() {
             if (metrics.width > maxWidth) {
               ctx.fillText(line, x, y);
               line = word + ' ';
-              y += 24;
+              y += 24 * backScale;
             } else {
               line = testLine;
             }
           });
-          // Draw remaining text in the line
           ctx.fillText(line, x, y);
-          // Move to next line after each paragraph (Enter)
-          y += 24;
+          y += 24 * backScale;
         });
       }
       ctx.restore();
 
-      // Show preview modal
       setShowPreview(previewCanvas.toDataURL());
     };
     img.src = uploadedImage;
@@ -386,33 +377,89 @@ export default function PostcardCustomizer() {
 
       {showPreview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-[95vw] max-h-[95vh] overflow-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Postcard Preview</h2>
-              <button
-                onClick={() => setShowPreview(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-            <img
-              src={showPreview}
-              alt="Postcard Preview"
-              className="max-w-full"
-            />
-            <div className="mt-4">
-              <div className="flex justify-end gap-4">
+          <div className="bg-white h-[80%] w-[70%] flex flex-col rounded-lg overflow-hidden">
+            <div className="p-6 flex-shrink-0 border-b">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-gray-900">Preview</h2>
                 <button
                   onClick={() => setShowPreview(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md"
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <span className="sr-only">Close</span>
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-grow">
+              <div className="space-y-6">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <img
+                    src={showPreview}
+                    alt="Postcard Preview"
+                    className="w-full rounded-lg shadow-sm"
+                  />
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Select your image dimension</p>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => {
+                        setPreviewLayout('horizontal');
+                        generatePreview();
+                      }}
+                      className={`px-4 py-2 rounded-lg transition-all ${
+                        previewLayout === 'horizontal'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      Horizontal
+                    </button>
+                    <button
+                      onClick={() => {
+                        setPreviewLayout('vertical');
+                        generatePreview();
+                      }}
+                      className={`px-4 py-2 rounded-lg transition-all ${
+                        previewLayout === 'vertical'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      Vertical
+                    </button>
+                    <button
+                      onClick={() => {
+                        setPreviewLayout('square');
+                        generatePreview();
+                      }}
+                      className={`px-4 py-2 rounded-lg transition-all ${
+                        previewLayout === 'square'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      Square
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 flex-shrink-0 border-t bg-gray-50 rounded-b-lg">
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
                 >
                   Close
                 </button>
                 <a
                   href={showPreview}
-                  download="my-postcard.png"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  download={`my-postcard-${previewLayout}.png`}
+                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all"
                 >
                   Download
                 </a>
