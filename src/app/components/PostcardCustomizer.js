@@ -45,6 +45,13 @@ export default function PostcardCustomizer() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewLayout, setPreviewLayout] = useState('horizontal');
 
+  // Add useEffect to handle preview generation when layout changes
+  useEffect(() => {
+    if (showPreview) {
+      generatePreview();
+    }
+  }, [previewLayout]);
+
   const handleFlip = () => {
     setCurrentSide(currentSide === 'front' ? 'back' : 'front');
   };
@@ -138,18 +145,22 @@ export default function PostcardCustomizer() {
     // Set canvas dimensions based on layout
     let canvasWidth, canvasHeight;
     switch(previewLayout) {
+      case 'horizontal':
+        canvasWidth = 2000;
+        canvasHeight = 1000;
+        break;
       case 'vertical':
-        canvasWidth = 1920;
-        canvasHeight = 1080;
+        canvasWidth = 1000;
+        canvasHeight = 2000;
         break;
       case 'square':
-        canvasWidth = 800;
-        canvasHeight = 800;
+        canvasWidth = 1500;
+        canvasHeight = 1500;
         break;
-      case 'horizontal':
       default:
-        canvasWidth = 1600;
-        canvasHeight = 800;
+        canvasWidth = 2000;
+        canvasHeight = 1000;
+        break;
     }
     
     previewCanvas.width = canvasWidth;
@@ -168,84 +179,134 @@ export default function PostcardCustomizer() {
       // Calculate card dimensions and positions based on layout
       const cardWidth = 879;
       const cardHeight = 591;
-      let frontScale, backScale, frontX, frontY, backX, backY;
+      let frontScale, backScale, frontX, frontY, backX, backY, frontRotation, backRotation;
 
       switch(previewLayout) {
-        case 'vertical':
-          frontScale = 0.65;
-          backScale = 0.65;
-          frontX = (canvasWidth - cardWidth * frontScale) / 2;
-          frontY = canvasHeight * 0.15;
-          backX = (canvasWidth - cardWidth * backScale) / 2;
-          backY = frontY + (cardHeight * frontScale) + 40;
-          break;
-        case 'square':
-          frontScale = 0.5;
-          backScale = 0.5;
-          frontX = (canvasWidth - cardWidth * frontScale) / 2;
-          frontY = (canvasHeight - (cardHeight * frontScale * 2 + 30)) / 2;
-          backX = frontX;
-          backY = frontY + (cardHeight * frontScale) + 30;
-          break;
         case 'horizontal':
-        default:
-          frontScale = 0.6;
-          backScale = 0.6;
-          frontX = canvasWidth * 0.15;
+          // Side by side layout
+          frontScale = 0.8;
+          backScale = 0.8;
+          frontX = canvasWidth * 0.05;
           frontY = (canvasHeight - cardHeight * frontScale) / 2;
           backX = canvasWidth * 0.55;
           backY = frontY;
+          frontRotation = -3; // Slight tilt left
+          backRotation = 3;   // Slight tilt right
+          break;
+        case 'vertical':
+          // Stacked vertically
+          frontScale = 0.8;
+          backScale = 0.8;
+          frontX = (canvasWidth - cardWidth * frontScale) / 2;
+          frontY = canvasHeight * 0.1;
+          backX = frontX + 20; // Slight offset for depth
+          backY = canvasHeight * 0.55;
+          frontRotation = -2;
+          backRotation = 2;
+          break;
+        case 'square':
+          // Stacked with equal spacing
+          frontScale = 1.2;
+          backScale = 1.2;
+          frontX = (canvasWidth - cardWidth * frontScale) / 2;
+          frontY = canvasHeight * 0.1;
+          backX = frontX - 20; // Offset in opposite direction
+          backY = canvasHeight * 0.4;
+          frontRotation = 2;
+          backRotation = -2;
+          break;
+        default:
+          // Default to horizontal layout
+          frontScale = 0.9;
+          backScale = 0.9;
+          frontX = canvasWidth * 0.05;
+          frontY = (canvasHeight - cardHeight * frontScale) / 2;
+          backX = canvasWidth * 0.55;
+          backY = frontY;
+          frontRotation = -3;
+          backRotation = 3;
       }
 
-      // Draw front card with shadow
-      ctx.save();
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
-      ctx.shadowBlur = 20;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 4;
-
-      // Draw front card
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(frontX, frontY, cardWidth * frontScale, cardHeight * frontScale);
-      ctx.drawImage(img, frontX, frontY, cardWidth * frontScale, cardHeight * frontScale);
-      ctx.drawImage(frontCanvasRef.current, frontX, frontY, cardWidth * frontScale, cardHeight * frontScale);
-
-      // Draw back card
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(backX, backY, cardWidth * backScale, cardHeight * backScale);
-      ctx.drawImage(staticCanvasRef.current, backX, backY, cardWidth * backScale, cardHeight * backScale);
-
-      // Draw text content
-      const textarea = document.querySelector('textarea');
-      if (textarea) {
-        ctx.font = `${16 * backScale}px ${selectedFont}`;
-        ctx.fillStyle = textColor;
+      // Helper function to draw a rotated card with shadow
+      const drawRotatedCard = (x, y, width, height, rotation, drawContent) => {
+        ctx.save();
         
-        const lines = textarea.value.split('\n');
-        let y = backY + (36 * backScale);
-        const maxWidth = (cardWidth * backScale / 2) - (40 * backScale);
-        const x = backX + (36 * backScale);
+        // Move to center point for rotation
+        ctx.translate(x + width / 2, y + height / 2);
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.translate(-(x + width / 2), -(y + height / 2));
 
-        lines.forEach(text => {
-          const words = text.split(' ');
-          let line = '';
+        // Add shadow
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 4;
+
+        // Draw white background
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(x, y, width, height);
+
+        // Draw the content
+        drawContent(x, y, width, height);
+
+        ctx.restore();
+      };
+
+      // Draw back card first (will be behind)
+      drawRotatedCard(
+        backX, 
+        backY, 
+        cardWidth * backScale, 
+        cardHeight * backScale,
+        backRotation,
+        (x, y, w, h) => {
+          ctx.drawImage(staticCanvasRef.current, x, y, w, h);
           
-          words.forEach(word => {
-            const testLine = line + word + ' ';
-            const metrics = ctx.measureText(testLine);
-            if (metrics.width > maxWidth) {
-              ctx.fillText(line, x, y);
-              line = word + ' ';
-              y += 24 * backScale;
-            } else {
-              line = testLine;
-            }
-          });
-          ctx.fillText(line, x, y);
-          y += 24 * backScale;
-        });
-      }
-      ctx.restore();
+          // Draw text content
+          const textarea = document.querySelector('textarea');
+          if (textarea) {
+            ctx.font = `${16 * backScale}px ${selectedFont}`;
+            ctx.fillStyle = textColor;
+            
+            const lines = textarea.value.split('\n');
+            let textY = y + (36 * backScale);
+            const maxWidth = (w / 2) - (40 * backScale);
+            const textX = x + (36 * backScale);
+
+            lines.forEach(text => {
+              const words = text.split(' ');
+              let line = '';
+              
+              words.forEach(word => {
+                const testLine = line + word + ' ';
+                const metrics = ctx.measureText(testLine);
+                if (metrics.width > maxWidth) {
+                  ctx.fillText(line, textX, textY);
+                  line = word + ' ';
+                  textY += 24 * backScale;
+                } else {
+                  line = testLine;
+                }
+              });
+              ctx.fillText(line, textX, textY);
+              textY += 24 * backScale;
+            });
+          }
+        }
+      );
+
+      // Draw front card (will be in front)
+      drawRotatedCard(
+        frontX, 
+        frontY, 
+        cardWidth * frontScale, 
+        cardHeight * frontScale,
+        frontRotation,
+        (x, y, w, h) => {
+          ctx.drawImage(img, x, y, w, h);
+          ctx.drawImage(frontCanvasRef.current, x, y, w, h);
+        }
+      );
 
       setShowPreview(previewCanvas.toDataURL());
     };
@@ -377,7 +438,8 @@ export default function PostcardCustomizer() {
 
       {showPreview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white h-[80%] w-[70%] flex flex-col rounded-lg overflow-hidden">
+          <div className="bg-white w-[45%] h-[95%] flex flex-col rounded-lg overflow-hidden">
+            {/* Header */}
             <div className="p-6 flex-shrink-0 border-b">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-gray-900">Preview</h2>
@@ -391,13 +453,14 @@ export default function PostcardCustomizer() {
               </div>
             </div>
 
-            <div className="p-6 overflow-y-auto flex-grow">
-              <div className="space-y-6">
-                <div className="bg-gray-50 rounded-lg p-4">
+            {/* Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-6 space-y-6">
+                <div className="bg-gray-100 rounded-lg p-4 h-[600px] flex items-center justify-center">
                   <img
                     src={showPreview}
                     alt="Postcard Preview"
-                    className="w-full rounded-lg shadow-sm"
+                    className="max-w-full max-h-full object-contain rounded-lg shadow-md"
                   />
                 </div>
 
@@ -405,10 +468,7 @@ export default function PostcardCustomizer() {
                   <p className="text-sm font-medium text-gray-700 mb-2">Select your image dimension</p>
                   <div className="flex flex-wrap gap-3">
                     <button
-                      onClick={() => {
-                        setPreviewLayout('horizontal');
-                        generatePreview();
-                      }}
+                      onClick={() => setPreviewLayout('horizontal')}
                       className={`px-4 py-2 rounded-lg transition-all ${
                         previewLayout === 'horizontal'
                           ? 'bg-blue-500 text-white'
@@ -418,10 +478,7 @@ export default function PostcardCustomizer() {
                       Horizontal
                     </button>
                     <button
-                      onClick={() => {
-                        setPreviewLayout('vertical');
-                        generatePreview();
-                      }}
+                      onClick={() => setPreviewLayout('vertical')}
                       className={`px-4 py-2 rounded-lg transition-all ${
                         previewLayout === 'vertical'
                           ? 'bg-blue-500 text-white'
@@ -431,10 +488,7 @@ export default function PostcardCustomizer() {
                       Vertical
                     </button>
                     <button
-                      onClick={() => {
-                        setPreviewLayout('square');
-                        generatePreview();
-                      }}
+                      onClick={() => setPreviewLayout('square')}
                       className={`px-4 py-2 rounded-lg transition-all ${
                         previewLayout === 'square'
                           ? 'bg-blue-500 text-white'
@@ -448,7 +502,8 @@ export default function PostcardCustomizer() {
               </div>
             </div>
 
-            <div className="p-6 flex-shrink-0 border-t bg-gray-50 rounded-b-lg">
+            {/* Footer - Fixed at bottom */}
+            <div className="p-6 flex-shrink-0 border-t bg-gray-50 rounded-b-lg mt-auto">
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowPreview(false)}
