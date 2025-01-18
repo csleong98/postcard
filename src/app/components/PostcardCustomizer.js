@@ -44,6 +44,7 @@ export default function PostcardCustomizer() {
   const [drawingColor, setDrawingColor] = useState('#000000');
   const [showPreview, setShowPreview] = useState(false);
   const [previewLayout, setPreviewLayout] = useState('horizontal');
+  const [previewBackground, setPreviewBackground] = useState('/images/preview-bg.jpg');
 
   // Add useEffect to handle preview generation when layout changes
   useEffect(() => {
@@ -142,175 +143,138 @@ export default function PostcardCustomizer() {
     // Create a temporary canvas for the combined preview
     const previewCanvas = document.createElement('canvas');
     
-    // Set canvas dimensions based on layout
-    let canvasWidth, canvasHeight;
-    switch(previewLayout) {
-      case 'horizontal':
-        canvasWidth = 2000;
-        canvasHeight = 1000;
-        break;
-      case 'vertical':
-        canvasWidth = 1000;
-        canvasHeight = 2000;
-        break;
-      case 'square':
-        canvasWidth = 1500;
-        canvasHeight = 1500;
-        break;
-      default:
-        canvasWidth = 2000;
-        canvasHeight = 1000;
-        break;
-    }
+    // Set fixed square canvas dimensions
+    const canvasWidth = 1500;
+    const canvasHeight = 1500;
     
     previewCanvas.width = canvasWidth;
     previewCanvas.height = canvasHeight;
     const ctx = previewCanvas.getContext('2d');
 
-    // Draw gradient background
-    const gradient = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
-    gradient.addColorStop(0, '#E5FFE6');  // Light mint green
-    gradient.addColorStop(1, '#FFF3D6');  // Light warm yellow
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    // Load and draw background image
+    const bgImg = new Image();
+    bgImg.onload = () => {
+      // Draw background with cover effect
+      const bgAspect = bgImg.width / bgImg.height;
+      const canvasAspect = canvasWidth / canvasHeight;
+      let drawWidth, drawHeight, x, y;
 
-    const img = new Image();
-    img.onload = () => {
-      // Calculate card dimensions and positions based on layout
-      const cardWidth = 879;
-      const cardHeight = 591;
-      let frontScale, backScale, frontX, frontY, backX, backY, frontRotation, backRotation;
-
-      switch(previewLayout) {
-        case 'horizontal':
-          // Side by side layout
-          frontScale = 0.8;
-          backScale = 0.8;
-          frontX = canvasWidth * 0.05;
-          frontY = (canvasHeight - cardHeight * frontScale) / 2;
-          backX = canvasWidth * 0.55;
-          backY = frontY;
-          frontRotation = -3; // Slight tilt left
-          backRotation = 3;   // Slight tilt right
-          break;
-        case 'vertical':
-          // Stacked vertically
-          frontScale = 0.8;
-          backScale = 0.8;
-          frontX = (canvasWidth - cardWidth * frontScale) / 2;
-          frontY = canvasHeight * 0.1;
-          backX = frontX + 20; // Slight offset for depth
-          backY = canvasHeight * 0.55;
-          frontRotation = -2;
-          backRotation = 2;
-          break;
-        case 'square':
-          // Stacked with equal spacing
-          frontScale = 1.2;
-          backScale = 1.2;
-          frontX = (canvasWidth - cardWidth * frontScale) / 2;
-          frontY = canvasHeight * 0.1;
-          backX = frontX - 20; // Offset in opposite direction
-          backY = canvasHeight * 0.4;
-          frontRotation = 2;
-          backRotation = -2;
-          break;
-        default:
-          // Default to horizontal layout
-          frontScale = 0.9;
-          backScale = 0.9;
-          frontX = canvasWidth * 0.05;
-          frontY = (canvasHeight - cardHeight * frontScale) / 2;
-          backX = canvasWidth * 0.55;
-          backY = frontY;
-          frontRotation = -3;
-          backRotation = 3;
+      if (bgAspect > canvasAspect) {
+        // Background is wider than canvas
+        drawHeight = canvasHeight;
+        drawWidth = drawHeight * bgAspect;
+        x = (canvasWidth - drawWidth) / 2;
+        y = 0;
+      } else {
+        // Background is taller than canvas
+        drawWidth = canvasWidth;
+        drawHeight = drawWidth / bgAspect;
+        x = 0;
+        y = (canvasHeight - drawHeight) / 2;
       }
 
-      // Helper function to draw a rotated card with shadow
-      const drawRotatedCard = (x, y, width, height, rotation, drawContent) => {
-        ctx.save();
+      ctx.drawImage(bgImg, x, y, drawWidth, drawHeight);
+
+      // Load and draw postcard content
+      const img = new Image();
+      img.onload = () => {
+        // Calculate card dimensions and positions
+        const cardWidth = 879;
+        const cardHeight = 591;
+        const scale = 1.2;  // Larger scale for better visibility
         
-        // Move to center point for rotation
-        ctx.translate(x + width / 2, y + height / 2);
-        ctx.rotate((rotation * Math.PI) / 180);
-        ctx.translate(-(x + width / 2), -(y + height / 2));
+        // Center horizontally and position vertically
+        const frontX = (canvasWidth - cardWidth * scale) / 2;
+        const frontY = canvasHeight * 0.1;  // Top card position
+        const backX = frontX - 20;  // Slight offset for depth
+        const backY = canvasHeight * 0.4;  // Bottom card position
 
-        // Add shadow
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
-        ctx.shadowBlur = 20;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 4;
-
-        // Draw white background
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(x, y, width, height);
-
-        // Draw the content
-        drawContent(x, y, width, height);
-
-        ctx.restore();
-      };
-
-      // Draw back card first (will be behind)
-      drawRotatedCard(
-        backX, 
-        backY, 
-        cardWidth * backScale, 
-        cardHeight * backScale,
-        backRotation,
-        (x, y, w, h) => {
-          ctx.drawImage(staticCanvasRef.current, x, y, w, h);
+        // Helper function to draw a rotated card with shadow
+        const drawRotatedCard = (x, y, width, height, rotation, drawContent) => {
+          ctx.save();
           
-          // Draw text content
-          const textarea = document.querySelector('textarea');
-          if (textarea) {
-            ctx.font = `${16 * backScale}px ${selectedFont}`;
-            ctx.fillStyle = textColor;
+          // Move to center point for rotation
+          ctx.translate(x + width / 2, y + height / 2);
+          ctx.rotate((rotation * Math.PI) / 180);
+          ctx.translate(-(x + width / 2), -(y + height / 2));
+
+          // Add shadow
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';  // Slightly darker shadow
+          ctx.shadowBlur = 25;  // Increased blur
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 8;  // Increased offset
+
+          // Draw white background
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(x, y, width, height);
+
+          // Draw the content
+          drawContent(x, y, width, height);
+
+          ctx.restore();
+        };
+
+        // Draw back card first (will be behind)
+        drawRotatedCard(
+          backX, 
+          backY, 
+          cardWidth * scale, 
+          cardHeight * scale,
+          -2,  // Slight rotation
+          (x, y, w, h) => {
+            ctx.drawImage(staticCanvasRef.current, x, y, w, h);
             
-            const lines = textarea.value.split('\n');
-            let textY = y + (36 * backScale);
-            const maxWidth = (w / 2) - (40 * backScale);
-            const textX = x + (36 * backScale);
-
-            lines.forEach(text => {
-              const words = text.split(' ');
-              let line = '';
+            // Draw text content
+            const textarea = document.querySelector('textarea');
+            if (textarea) {
+              ctx.font = `${16 * scale}px ${selectedFont}`;
+              ctx.fillStyle = textColor;
               
-              words.forEach(word => {
-                const testLine = line + word + ' ';
-                const metrics = ctx.measureText(testLine);
-                if (metrics.width > maxWidth) {
-                  ctx.fillText(line, textX, textY);
-                  line = word + ' ';
-                  textY += 24 * backScale;
-                } else {
-                  line = testLine;
-                }
+              const lines = textarea.value.split('\n');
+              let textY = y + (36 * scale);
+              const maxWidth = (w / 2) - (40 * scale);
+              const textX = x + (36 * scale);
+
+              lines.forEach(text => {
+                const words = text.split(' ');
+                let line = '';
+                
+                words.forEach(word => {
+                  const testLine = line + word + ' ';
+                  const metrics = ctx.measureText(testLine);
+                  if (metrics.width > maxWidth) {
+                    ctx.fillText(line, textX, textY);
+                    line = word + ' ';
+                    textY += 24 * scale;
+                  } else {
+                    line = testLine;
+                  }
+                });
+                ctx.fillText(line, textX, textY);
+                textY += 24 * scale;
               });
-              ctx.fillText(line, textX, textY);
-              textY += 24 * backScale;
-            });
+            }
           }
-        }
-      );
+        );
 
-      // Draw front card (will be in front)
-      drawRotatedCard(
-        frontX, 
-        frontY, 
-        cardWidth * frontScale, 
-        cardHeight * frontScale,
-        frontRotation,
-        (x, y, w, h) => {
-          ctx.drawImage(img, x, y, w, h);
-          ctx.drawImage(frontCanvasRef.current, x, y, w, h);
-        }
-      );
+        // Draw front card (will be in front)
+        drawRotatedCard(
+          frontX, 
+          frontY, 
+          cardWidth * scale, 
+          cardHeight * scale,
+          2,  // Slight rotation in opposite direction
+          (x, y, w, h) => {
+            ctx.drawImage(img, x, y, w, h);
+            ctx.drawImage(frontCanvasRef.current, x, y, w, h);
+          }
+        );
 
-      setShowPreview(previewCanvas.toDataURL());
+        setShowPreview(previewCanvas.toDataURL());
+      };
+      img.src = uploadedImage;
     };
-    img.src = uploadedImage;
+    bgImg.src = previewBackground;
   };
 
   return (
@@ -440,7 +404,7 @@ export default function PostcardCustomizer() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white w-[45%] h-[95%] flex flex-col rounded-lg overflow-hidden">
             {/* Header */}
-            <div className="p-6 flex-shrink-0 border-b">
+            <div className="p-4 flex-shrink-0 border-b">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-gray-900">Preview</h2>
                 <button
@@ -453,57 +417,17 @@ export default function PostcardCustomizer() {
               </div>
             </div>
 
-            {/* Content - Scrollable */}
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-6 space-y-6">
-                <div className="bg-gray-100 rounded-lg p-4 h-[600px] flex items-center justify-center">
-                  <img
-                    src={showPreview}
-                    alt="Postcard Preview"
-                    className="max-w-full max-h-full object-contain rounded-lg shadow-md"
-                  />
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">Select your image dimension</p>
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      onClick={() => setPreviewLayout('horizontal')}
-                      className={`px-4 py-2 rounded-lg transition-all ${
-                        previewLayout === 'horizontal'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      Horizontal
-                    </button>
-                    <button
-                      onClick={() => setPreviewLayout('vertical')}
-                      className={`px-4 py-2 rounded-lg transition-all ${
-                        previewLayout === 'vertical'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      Vertical
-                    </button>
-                    <button
-                      onClick={() => setPreviewLayout('square')}
-                      className={`px-4 py-2 rounded-lg transition-all ${
-                        previewLayout === 'square'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      Square
-                    </button>
-                  </div>
-                </div>
-              </div>
+            {/* Content - Full height preview */}
+            <div className="flex-1 bg-gray-100 flex items-center justify-center p-4">
+              <img
+                src={showPreview}
+                alt="Postcard Preview"
+                className="max-w-[95%] max-h-[95%] object-contain rounded-lg shadow-md"
+              />
             </div>
 
             {/* Footer - Fixed at bottom */}
-            <div className="p-6 flex-shrink-0 border-t bg-gray-50 rounded-b-lg mt-auto">
+            <div className="p-4 flex-shrink-0 border-t bg-gray-50 rounded-b-lg">
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowPreview(false)}
@@ -513,7 +437,7 @@ export default function PostcardCustomizer() {
                 </button>
                 <a
                   href={showPreview}
-                  download={`my-postcard-${previewLayout}.png`}
+                  download="my-postcard.png"
                   className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all"
                 >
                   Download
