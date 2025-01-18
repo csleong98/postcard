@@ -44,7 +44,7 @@ export default function PostcardCustomizer() {
   const [drawingColor, setDrawingColor] = useState('#000000');
   const [showPreview, setShowPreview] = useState(false);
   const [previewLayout, setPreviewLayout] = useState('horizontal');
-  const [previewBackground, setPreviewBackground] = useState('/images/preview-bg.jpg');
+  const [previewBackground, setPreviewBackground] = useState('/images/preview-bg.png');
 
   // Add useEffect to handle preview generation when layout changes
   useEffect(() => {
@@ -182,12 +182,13 @@ export default function PostcardCustomizer() {
         const cardWidth = 879;
         const cardHeight = 591;
         const scale = 1.2;  // Larger scale for better visibility
+        const padding = 16 * scale; // Scale the padding with the card
         
         // Center horizontally and position vertically
         const frontX = (canvasWidth - cardWidth * scale) / 2;
-        const frontY = canvasHeight * 0.1;  // Top card position
-        const backX = frontX - 20;  // Slight offset for depth
-        const backY = canvasHeight * 0.4;  // Bottom card position
+        const frontY = canvasHeight * 0.05;  // Moved up to 15% from top
+        const backX = frontX - 15;  // Slight offset for depth
+        const backY = canvasHeight * 0.45;  // Adjusted to maintain spacing
 
         // Helper function to draw a rotated card with shadow
         const drawRotatedCard = (x, y, width, height, rotation, drawContent) => {
@@ -198,15 +199,21 @@ export default function PostcardCustomizer() {
           ctx.rotate((rotation * Math.PI) / 180);
           ctx.translate(-(x + width / 2), -(y + height / 2));
 
-          // Add shadow
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';  // Slightly darker shadow
-          ctx.shadowBlur = 25;  // Increased blur
+          // Add shadow (less prominent)
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+          ctx.shadowBlur = 15;
           ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 8;  // Increased offset
+          ctx.shadowOffsetY = 4;
 
-          // Draw white background
+          // Draw white background with shadow
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(x, y, width, height);
+
+          // Remove shadow for content
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
 
           // Draw the content
           drawContent(x, y, width, height);
@@ -214,7 +221,25 @@ export default function PostcardCustomizer() {
           ctx.restore();
         };
 
-        // Draw back card first (will be behind)
+        // Draw front card first (will be behind)
+        drawRotatedCard(
+          frontX, 
+          frontY, 
+          cardWidth * scale, 
+          cardHeight * scale,
+          2,  // Slight rotation in opposite direction
+          (x, y, w, h) => {
+            // Draw the image with padding
+            const paddedX = x + padding;
+            const paddedY = y + padding;
+            const paddedWidth = w - (padding * 2);
+            const paddedHeight = h - (padding * 2);
+            ctx.drawImage(img, paddedX, paddedY, paddedWidth, paddedHeight);
+            ctx.drawImage(frontCanvasRef.current, paddedX, paddedY, paddedWidth, paddedHeight);
+          }
+        );
+
+        // Draw back card last (will be on top)
         drawRotatedCard(
           backX, 
           backY, 
@@ -227,7 +252,7 @@ export default function PostcardCustomizer() {
             // Draw text content
             const textarea = document.querySelector('textarea');
             if (textarea) {
-              ctx.font = `${16 * scale}px ${selectedFont}`;
+              ctx.font = `${24 * scale}px ${selectedFont}`;
               ctx.fillStyle = textColor;
               
               const lines = textarea.value.split('\n');
@@ -254,19 +279,6 @@ export default function PostcardCustomizer() {
                 textY += 24 * scale;
               });
             }
-          }
-        );
-
-        // Draw front card (will be in front)
-        drawRotatedCard(
-          frontX, 
-          frontY, 
-          cardWidth * scale, 
-          cardHeight * scale,
-          2,  // Slight rotation in opposite direction
-          (x, y, w, h) => {
-            ctx.drawImage(img, x, y, w, h);
-            ctx.drawImage(frontCanvasRef.current, x, y, w, h);
           }
         );
 
@@ -402,7 +414,7 @@ export default function PostcardCustomizer() {
 
       {showPreview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white w-[45%] h-[95%] flex flex-col rounded-lg overflow-hidden">
+          <div className="bg-white w-[60%] h-[95%] flex flex-col rounded-lg">
             {/* Header */}
             <div className="p-4 flex-shrink-0 border-b">
               <div className="flex justify-between items-center">
@@ -418,12 +430,14 @@ export default function PostcardCustomizer() {
             </div>
 
             {/* Content - Full height preview */}
-            <div className="flex-1 bg-gray-100 flex items-center justify-center p-4">
-              <img
-                src={showPreview}
-                alt="Postcard Preview"
-                className="max-w-[95%] max-h-[95%] object-contain rounded-lg shadow-md"
-              />
+            <div className="flex-1 bg-gray-100 flex items-center justify-center p-4 min-h-0">
+              <div className="relative w-full h-full flex items-center justify-center">
+                <img
+                  src={showPreview}
+                  alt="Postcard Preview"
+                  className="max-w-full max-h-full object-contain rounded-lg shadow-md"
+                />
+              </div>
             </div>
 
             {/* Footer - Fixed at bottom */}
