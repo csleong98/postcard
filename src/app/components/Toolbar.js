@@ -126,12 +126,13 @@ const Toolbar = (props) => {
           type="color"
           value={props.drawingColor}
           onChange={(e) => props.onColorChange(e.target.value)}
-          className="absolute opacity-0 w-px h-px"
+          className="absolute opacity-0 cursor-pointer"
           style={{ 
-            top: '-6px',
-            left: '1%',
-            right: '1%',
-            transform: 'translateX(-50%)',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+            zIndex: showColorPicker ? 10 : -1,
             pointerEvents: showColorPicker ? 'auto' : 'none'
           }}
         />

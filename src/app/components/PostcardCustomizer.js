@@ -89,8 +89,14 @@ export default function PostcardCustomizer() {
       const canvas = frontCanvasRef.current;
       const ctx = canvas.getContext('2d');
       const rect = canvas.getBoundingClientRect();
+      const point = e.touches ? e.touches[0] : e;
       ctx.beginPath();
-      ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+      ctx.moveTo(point.clientX - rect.left, point.clientY - rect.top);
+
+      // Prevent scrolling while drawing on touch devices
+      if (e.touches) {
+        e.preventDefault();
+      }
     }
   };
 
@@ -99,19 +105,26 @@ export default function PostcardCustomizer() {
     const canvas = frontCanvasRef.current;
     const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
+    const point = e.touches ? e.touches[0] : e;
+
     if (selectedTool === 'eraser') {
       const size = 16;
       ctx.clearRect(
-        e.clientX - rect.left - size / 2,
-        e.clientY - rect.top - size / 2,
+        point.clientX - rect.left - size / 2,
+        point.clientY - rect.top - size / 2,
         size,
         size
       );
     } else {
-      ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      ctx.lineTo(point.clientX - rect.left, point.clientY - rect.top);
       ctx.strokeStyle = selectedTool === 'pencil' ? drawingColor : `${drawingColor}80`;
       ctx.lineWidth = selectedTool === 'pencil' ? 2 : 8;
       ctx.stroke();
+    }
+
+    // Prevent scrolling while drawing on touch devices
+    if (e.touches) {
+      e.preventDefault();
     }
   };
 
@@ -289,11 +302,26 @@ export default function PostcardCustomizer() {
     bgImg.src = previewBackground;
   };
 
+  // Add touch event handler to prevent scrolling
+  useEffect(() => {
+    const canvas = frontCanvasRef.current;
+    if (canvas) {
+      canvas.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+      canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+    }
+    return () => {
+      if (canvas) {
+        canvas.removeEventListener('touchstart', (e) => e.preventDefault());
+        canvas.removeEventListener('touchmove', (e) => e.preventDefault());
+      }
+    };
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       {/* Title */}
       <h1 
-        className="text-slate-900 text-4xl mb-8 text-center"
+        className="text-slate-900 text-2xl md:text-4xl mb-4 md:mb-8 text-center"
         style={{
           fontFamily: 'PP Editorial New',
           fontWeight: 'italic',
@@ -303,31 +331,36 @@ export default function PostcardCustomizer() {
         Make your own postcard
       </h1>
 
-      <div className="relative">
+      <div className="relative w-full max-w-[879.04px]">
         {/* Postcard Canvas */}
-        <div className="relative w-[879.04px] h-[591.04px] perspective">
+        <div className="relative w-full aspect-[879/591] perspective">
           <div
-            className={`absolute inset-0 w-full h-full transition-transform duration-700 transform-style-preserve-3d ${currentSide === 'back' ? 'rotate-y-180' : ''
-              }`}
+            className={`absolute inset-0 w-full h-full transition-transform duration-700 transform-style-preserve-3d ${
+              currentSide === 'back' ? 'rotate-y-180' : ''
+            }`}
           >
             {/* Front Side */}
-            <div className="absolute w-full h-full backface-hidden bg-white shadow-md flex items-center justify-center">
+            <div className="absolute w-full h-full backface-hidden bg-white shadow-md flex items-center justify-center touch-none">
               {/* Drawing canvas for front */}
               <canvas
                 ref={frontCanvasRef}
                 width={879}
                 height={591}
-                className='absolute inset-0'
+                className="absolute inset-0 touch-none"
                 onMouseDown={startDrawing}
                 onMouseMove={draw}
                 onMouseUp={stopDrawing}
                 onMouseLeave={stopDrawing}
+                onTouchStart={startDrawing}
+                onTouchMove={draw}
+                onTouchEnd={stopDrawing}
+                onTouchCancel={stopDrawing}
               ></canvas>
 
               <img
                 src={uploadedImage}
                 alt="Postcard Front"
-                className="w-full h-full object-cover p-4 box-border"
+                className="w-full h-full object-cover p-4 box-border pointer-events-none"
               />
 
               <input
@@ -346,7 +379,7 @@ export default function PostcardCustomizer() {
                 ref={staticCanvasRef}
                 width={879}
                 height={591}
-                className='absolute inset-0 pointer-events-none'
+                className="absolute inset-0 pointer-events-none"
               ></canvas>
 
               {/* Add Message Textarea */}
@@ -357,7 +390,7 @@ export default function PostcardCustomizer() {
                   style={{
                     fontFamily: selectedFont,
                     color: textColor,
-                    fontSize: '20px'
+                    fontSize: "20px"
                   }}
                   onFocus={() => setIsTextareaActive(true)}
                   onBlur={(e) => {
@@ -376,7 +409,7 @@ export default function PostcardCustomizer() {
         </div>
 
         {/* Toolbar - now positioned at bottom center */}
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-[calc(100%+24px)]">
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-[calc(100%+12px)] md:translate-y-[calc(100%+24px)] w-full md:w-auto">
           <Toolbar
             currentSide={currentSide}
             selectedTool={selectedTool}
@@ -403,18 +436,12 @@ export default function PostcardCustomizer() {
             onFlip={handleFlip}
           />
         </div>
-
-        {/* Remove the font controls since they're now in the toolbar */}
-        {isTextareaActive && currentSide === 'back' && (
-          <div className="absolute -left-[calc(200px+24px)] top-0 w-[200px] flex flex-col gap-4 controls-container">
-            {/* Remove the font and color controls since they're now in the toolbar */}
-          </div>
-        )}
       </div>
 
+      {/* Preview Modal */}
       {showPreview && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white w-[60%] h-[95%] flex flex-col rounded-lg">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white w-full md:w-[80%] lg:w-[60%] h-[95%] flex flex-col rounded-lg">
             {/* Header */}
             <div className="p-4 flex-shrink-0 border-b">
               <div className="flex justify-between items-center">
