@@ -182,17 +182,21 @@ const Toolbar = (props) => {
 
   return (
     <div className="relative" ref={toolbarRef}>
-      <div className="inline-flex items-center p-2.5 gap-4 rounded-2xl border border-[#E4E4E4] bg-white shadow-[0px_1px_4px_0px_rgba(0,0,0,0.10)] transition-all duration-300 ease-in-out">
+      <div className={`inline-flex items-center p-2.5 gap-4 rounded-2xl border border-[#E4E4E4] bg-white shadow-[0px_1px_4px_0px_rgba(0,0,0,0.10)] transition-all duration-300 ease-in-out ${props.isMobile ? 'w-full justify-between' : ''}`}>
         {props.currentSide === 'front' ? renderFrontTools() : renderBackTools()}
-        <Separator />
-        <IconButton
-          icon={DownloadSimple}
-          onClick={props.onDownload}
-        />
-        <IconButton
-          icon={ArrowsCounterClockwise}
-          onClick={props.onFlip}
-        />
+        {!props.isMobile && (
+          <>
+            <Separator />
+            <IconButton
+              icon={DownloadSimple}
+              onClick={props.onDownload}
+            />
+            <IconButton
+              icon={ArrowsCounterClockwise}
+              onClick={props.onFlip}
+            />
+          </>
+        )}
       </div>
     </div>
   );
