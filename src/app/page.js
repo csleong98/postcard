@@ -10,15 +10,11 @@ export default function Home() {
       {/* Hero Section */}
       <div className="inset-0 flex flex-col items-center justify-center text-center px-4">
         <h1
-          className="text-4xl md:text-6xl mb-4 text-slate-900"
-          style={{
-            fontFamily: 'PP Editorial New',
-            fontStyle: 'italic',
-          }}
+          className="h1 mb-4 text-slate-900"
         >
           Recreating the joy of sending<br />postcards to your loved ones online
         </h1>
-        <p className="text-sm md:text-base text-slate-700 max-w-2xl">
+        <p className="body-large text-[#252525] max-w-2xl">
           Still remember the feeling of love and warm when you receive postcards from your friends or family? Well now you can send that feeling whenever they are in the world.
         </p>
       </div>
@@ -32,23 +28,19 @@ export default function Home() {
           className="w-full h-auto"
           priority
         />
-
       </section>
 
       {/* How to Send Section */}
       <section className="py-16 md:py-24">
         <h2
-          className="text-3xl md:text-4xl text-center mb-12 text-slate-900 px-4"
-          style={{
-            fontFamily: 'PP Editorial New',
-            fontStyle: 'italic',
-          }}
+          className="h2 text-center mb-12 text-slate-900 px-4"
         >
           How to send?
         </h2>
         <div className="overflow-x-auto no-scrollbar md:px-4">
           <div className="flex gap-8 md:gap-12 md:justify-center min-w-max md:min-w-0 px-4 md:px-0">
             <div className="flex flex-col items-center gap-4 w-[280px] md:w-48">
+              <h3 className="title-medium text-slate-900">Upload a picture</h3>
               <Image
                 src="/images/illustration/step 1.png"
                 alt="Upload a picture"
@@ -56,9 +48,10 @@ export default function Home() {
                 height={200}
                 className="w-full h-auto"
               />
-              <p className="text-sm md:text-base text-center text-slate-700">Upload your favorite landscape photo to the front of the card</p>
+              <p className="body-medium text-center text-[#252525]">Upload your favorite landscape photo to the front of the card</p>
             </div>
             <div className="flex flex-col items-center gap-4 w-[280px] md:w-48">
+              <h3 className="title-medium text-slate-900">Draw something</h3>
               <Image
                 src="/images/illustration/step 2.png"
                 alt="Draw something"
@@ -66,9 +59,10 @@ export default function Home() {
                 height={200}
                 className="w-full h-auto"
               />
-              <p className="text-sm md:text-base text-center text-slate-700">You can also draw on top of your uploaded photo to add more spice</p>
+              <p className="body-medium text-center text-[#252525]">You can also draw on top of your uploaded photo to add more spice</p>
             </div>
             <div className="flex flex-col items-center gap-4 w-[280px] md:w-48">
+              <h3 className="title-medium text-slate-900">Write your message</h3>
               <Image
                 src="/images/illustration/step 3.png"
                 alt="Write your message"
@@ -76,9 +70,10 @@ export default function Home() {
                 height={200}
                 className="w-full h-auto"
               />
-              <p className="text-sm md:text-base text-center text-slate-700">Flip the card around and write your message. Style it or add some color to it!</p>
+              <p className="body-medium text-center text-[#252525]">Flip the card around and write your message. Style it or add some color to it!</p>
             </div>
             <div className="flex flex-col items-center gap-4 w-[280px] md:w-48">
+              <h3 className="title-medium text-slate-900">Export and send it</h3>
               <Image
                 src="/images/illustration/step 4.png"
                 alt="Export and send it"
@@ -86,7 +81,7 @@ export default function Home() {
                 height={200}
                 className="w-full h-auto"
               />
-              <p className="text-sm md:text-base text-center text-slate-700">Finally, preview the end result and download it to send it to anyone!</p>
+              <p className="body-medium text-center text-[#252525]">Finally, preview the end result and download it to send it to anyone!</p>
             </div>
           </div>
         </div>
@@ -95,15 +90,11 @@ export default function Home() {
       {/* Craft Section */}
       <section className="py-16 md:py-24 px-4 bg-[#FFF5E3]">
         <h2
-          className="text-3xl md:text-4xl text-center mb-4 text-slate-900"
-          style={{
-            fontFamily: 'PP Editorial New',
-            fontStyle: 'italic',
-          }}
+          className="h2 text-center mb-4 text-slate-900"
         >
           Craft your postcard and send it
         </h2>
-        <p className="text-sm md:text-base text-center text-slate-700 mb-12">
+        <p className="body-large text-center text-[#252525] mb-12">
           No sign ups and logins. You just dive straight right in to making your postcard
         </p>
         <div className="max-w-[879px] mx-auto">
@@ -116,15 +107,11 @@ export default function Home() {
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-8 md:gap-16">
           <div className="flex-1">
             <h2
-              className="text-3xl md:text-4xl mb-4 text-slate-900"
-              style={{
-                fontFamily: 'PP Editorial New',
-                fontStyle: 'italic',
-              }}
+              className="h2 mb-4 text-slate-900"
             >
               Wanted to<br />provide feedback?
             </h2>
-            <p className="text-sm md:text-base text-slate-700 mb-8">
+            <p className="body-large text-[#252525] mb-8">
               This is the first version of Postcards and I understand it might be lacking a lot of things. If you have feedback towards it. Please don't hesitate to send me an email or message me on these social media platforms.
             </p>
             <div className="flex gap-4">
@@ -155,7 +142,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 text-center text-sm text-slate-700">
+      <footer className="py-8 text-center body-medium text-[#252525]">
         Created with ❤️ by Chee Seng Leong • 2025
       </footer>
     </main>
