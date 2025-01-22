@@ -1,15 +1,15 @@
 import React, { useEffect, useRef } from 'react';
 import IconButton from './IconButton';
 import { 
+  Upload, 
   Pencil, 
-  PencilLine, 
+  PenLine, 
   Eraser, 
-  ArrowClockwise, 
-  UploadSimple,
-  DownloadSimple,
-  ArrowsCounterClockwise,
-  CaretDown
-} from "@phosphor-icons/react";
+  RotateCcw, 
+  Download, 
+  RotateCw,
+  ChevronDown 
+} from 'lucide-react';
 
 const Separator = () => (
   <div className="w-[1px] h-8 bg-[#E4E4E4]" />
@@ -23,7 +23,24 @@ const Separator = () => (
  * - Front side: Shows drawing tools (like Figma's drawing tools)
  * - Back side: Shows text formatting tools (like Figma's text properties)
  */
-const Toolbar = (props) => {
+export default function Toolbar({
+  currentSide,
+  selectedTool,
+  drawingColor,
+  textColor,
+  selectedFont,
+  fontOptions,
+  onToolSelect,
+  onColorChange,
+  onTextColorChange,
+  onFontChange,
+  onClear,
+  onUpload,
+  onDownload,
+  onFlip,
+  isMobile,
+  hideUpload
+}) {
   const [showColorPicker, setShowColorPicker] = React.useState(false);
   const [showFontDropdown, setShowFontDropdown] = React.useState(false);
   const colorPickerRef = useRef(null);
@@ -58,7 +75,7 @@ const Toolbar = (props) => {
 
   useEffect(() => {
     setShowColorPicker(false);
-  }, [props.selectedTool]);
+  }, [selectedTool]);
 
   useEffect(() => {
     if (showColorPicker && colorPickerInputRef.current) {
@@ -72,10 +89,10 @@ const Toolbar = (props) => {
         className="inline-flex items-center gap-2 px-4 py-2 w-[160px] rounded-lg bg-white border border-gray-300 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
         onClick={() => setShowFontDropdown(!showFontDropdown)}
       >
-        <span className="truncate text-gray-900" style={{ fontFamily: props.selectedFont }} title={props.selectedFont}>
-          {props.selectedFont}
+        <span className="truncate text-gray-900" style={{ fontFamily: selectedFont }} title={selectedFont}>
+          {selectedFont}
         </span>
-        <CaretDown 
+        <ChevronDown 
           size={16} 
           className={`transform transition-transform duration-200 ${showFontDropdown ? 'rotate-180' : ''} flex-shrink-0 ml-auto text-gray-900`}
           weight="bold"
@@ -83,13 +100,13 @@ const Toolbar = (props) => {
       </button>
       {showFontDropdown && (
         <div className="absolute bottom-full left-0 mb-2 w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 max-h-[200px] overflow-y-auto">
-          {props.fontOptions.map((font) => (
+          {fontOptions.map((font) => (
             <button
               key={font.value}
               className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors focus:outline-none focus:bg-gray-50 text-gray-900"
               style={{ fontFamily: font.value }}
               onClick={() => {
-                props.onFontChange(font.value);
+                onFontChange(font.value);
                 setShowFontDropdown(false);
               }}
               title={font.name}
@@ -103,29 +120,39 @@ const Toolbar = (props) => {
   );
 
   const renderFrontTools = () => (
-    <>
+    <div className="flex items-center gap-2">
+      {!hideUpload && (
+        <IconButton
+          icon={<Upload size={20} />}
+          onClick={onUpload}
+          tooltip="Upload Image"
+        />
+      )}
       <IconButton
-        icon={Pencil}
-        isActive={props.selectedTool === 'pencil'}
-        onClick={() => props.onToolSelect('pencil')}
+        icon={<Pencil size={20} />}
+        isActive={selectedTool === 'pencil'}
+        onClick={() => onToolSelect('pencil')}
+        tooltip="Pencil"
       />
       <IconButton
-        icon={PencilLine}
-        isActive={props.selectedTool === 'marker'}
-        onClick={() => props.onToolSelect('marker')}
+        icon={<PenLine size={20} />}
+        isActive={selectedTool === 'marker'}
+        onClick={() => onToolSelect('marker')}
+        tooltip="Marker"
       />
       <div ref={colorPickerRef} className="relative">
         <IconButton
           isColorIndicator
-          color={props.drawingColor}
+          color={drawingColor}
           isActive={showColorPicker}
           onClick={() => setShowColorPicker(!showColorPicker)}
+          tooltip="Drawing Color"
         />
         <input
           ref={colorPickerInputRef}
           type="color"
-          value={props.drawingColor}
-          onChange={(e) => props.onColorChange(e.target.value)}
+          value={drawingColor}
+          onChange={(e) => onColorChange(e.target.value)}
           className="absolute opacity-0 cursor-pointer"
           style={{ 
             top: '0',
@@ -138,19 +165,17 @@ const Toolbar = (props) => {
         />
       </div>
       <IconButton
-        icon={Eraser}
-        isActive={props.selectedTool === 'eraser'}
-        onClick={() => props.onToolSelect('eraser')}
+        icon={<Eraser size={20} />}
+        isActive={selectedTool === 'eraser'}
+        onClick={() => onToolSelect('eraser')}
+        tooltip="Eraser"
       />
       <IconButton
-        icon={ArrowClockwise}
-        onClick={props.onClear}
+        icon={<RotateCcw size={20} />}
+        onClick={onClear}
+        tooltip="Clear"
       />
-      <IconButton
-        icon={UploadSimple}
-        onClick={props.onUpload}
-      />
-    </>
+    </div>
   );
 
   const renderBackTools = () => (
@@ -159,15 +184,16 @@ const Toolbar = (props) => {
       <div ref={colorPickerRef} className="relative">
         <IconButton
           isColorIndicator
-          color={props.textColor}
+          color={textColor}
           isActive={showColorPicker}
           onClick={() => setShowColorPicker(!showColorPicker)}
+          tooltip="Text Color"
         />
         <input
           ref={colorPickerInputRef}
           type="color"
-          value={props.textColor}
-          onChange={(e) => props.onTextColorChange(e.target.value)}
+          value={textColor}
+          onChange={(e) => onTextColorChange(e.target.value)}
           className="absolute opacity-0 w-px h-px"
           style={{ 
             top: '-6px',
@@ -182,24 +208,24 @@ const Toolbar = (props) => {
 
   return (
     <div className="relative" ref={toolbarRef}>
-      <div className={`inline-flex items-center p-2.5 gap-4 rounded-2xl border border-[#E4E4E4] bg-white shadow-[0px_1px_4px_0px_rgba(0,0,0,0.10)] transition-all duration-300 ease-in-out ${props.isMobile ? 'w-full justify-between' : ''}`}>
-        {props.currentSide === 'front' ? renderFrontTools() : renderBackTools()}
-        {!props.isMobile && (
+      <div className={`inline-flex items-center p-2.5 gap-4 rounded-2xl border border-[#E4E4E4] bg-white shadow-[0px_1px_4px_0px_rgba(0,0,0,0.10)] transition-all duration-300 ease-in-out ${isMobile ? 'w-full justify-between' : ''}`}>
+        {currentSide === 'front' ? renderFrontTools() : renderBackTools()}
+        {!isMobile && (
           <>
             <Separator />
             <IconButton
-              icon={DownloadSimple}
-              onClick={props.onDownload}
+              icon={<Download size={20} />}
+              onClick={onDownload}
+              tooltip="Download"
             />
             <IconButton
-              icon={ArrowsCounterClockwise}
-              onClick={props.onFlip}
+              icon={<RotateCw size={20} />}
+              onClick={onFlip}
+              tooltip="Flip"
             />
           </>
         )}
       </div>
     </div>
   );
-};
-
-export default Toolbar; 
+} 

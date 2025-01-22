@@ -1,12 +1,13 @@
 import React from 'react';
 
 const IconButton = ({ 
-  icon: Icon, 
+  icon, 
   isActive, 
   isDisabled,
   onClick,
   isColorIndicator,
-  color = '#222222'
+  color = '#222222',
+  tooltip
 }) => {
   const baseStyles = "inline-flex justify-center items-center p-3 rounded-lg transition-colors";
   const stateStyles = isDisabled
@@ -21,6 +22,7 @@ const IconButton = ({
         className={`${baseStyles} ${stateStyles}`}
         onClick={onClick}
         disabled={isDisabled}
+        title={tooltip}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30" fill="none">
           <g filter="url(#filter0_d_35_982)">
@@ -50,8 +52,9 @@ const IconButton = ({
       className={`${baseStyles} ${stateStyles}`}
       onClick={onClick}
       disabled={isDisabled}
+      title={tooltip}
     >
-      <Icon size={24} weight={isActive ? "fill" : "regular"} color="#222222" />
+      {icon}
     </button>
   );
 };

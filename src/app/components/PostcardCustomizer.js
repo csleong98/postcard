@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Toolbar from './Toolbar';
+import { Upload, Eye } from 'lucide-react';
 
 // Add this function to compress the image
 const compressImage = (base64String) => {
@@ -46,6 +47,7 @@ export default function PostcardCustomizer() {
   const [previewLayout, setPreviewLayout] = useState('horizontal');
   const [previewBackground, setPreviewBackground] = useState('/images/preview-bg.png');
   const [isMobile, setIsMobile] = useState(false);
+  const [message, setMessage] = useState('');
 
   // Add useEffect to handle preview generation when layout changes
   useEffect(() => {
@@ -64,6 +66,45 @@ export default function PostcardCustomizer() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  useEffect(() => {
+    const resizeCanvas = () => {
+      const canvas = frontCanvasRef.current;
+      const staticCanvas = staticCanvasRef.current;
+      if (canvas && staticCanvas) {
+        const container = canvas.parentElement;
+        const { width, height } = container.getBoundingClientRect();
+        
+        // Set canvas dimensions to match container
+        canvas.width = width;
+        canvas.height = height;
+        staticCanvas.width = width;
+        staticCanvas.height = height;
+
+        // Redraw static elements
+        const ctx = staticCanvas.getContext('2d');
+        ctx.clearRect(0, 0, width, height);
+        ctx.strokeStyle = '#cccccc';
+        ctx.lineWidth = 1;
+        
+        // Scale stamp box and divider line
+        const stampWidth = width * (120/879);
+        const stampHeight = height * (160/591);
+        const padding = width * (16/879);
+        
+        ctx.strokeRect(width - stampWidth - padding, padding, stampWidth, stampHeight);
+        
+        ctx.beginPath();
+        ctx.moveTo(width / 2, padding);
+        ctx.lineTo(width / 2, height - padding);
+        ctx.stroke();
+      }
+    };
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    return () => window.removeEventListener('resize', resizeCanvas);
+  }, [isMobile]);
 
   const handleFlip = () => {
     setCurrentSide(currentSide === 'front' ? 'back' : 'front');
@@ -100,11 +141,13 @@ export default function PostcardCustomizer() {
       const canvas = frontCanvasRef.current;
       const rect = canvas.getBoundingClientRect();
       const point = e.touches ? e.touches[0] : e;
-      const x = point.clientX - rect.left;
-      const y = point.clientY - rect.top;
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (point.clientX - rect.left) * scaleX;
+      const y = (point.clientY - rect.top) * scaleY;
 
       // Only start drawing if within canvas bounds
-      if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+      if (x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height) {
         isDrawing.current = true;
         const ctx = canvas.getContext('2d');
         ctx.beginPath();
@@ -124,15 +167,17 @@ export default function PostcardCustomizer() {
     const canvas = frontCanvasRef.current;
     const rect = canvas.getBoundingClientRect();
     const point = e.touches ? e.touches[0] : e;
-    const x = point.clientX - rect.left;
-    const y = point.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (point.clientX - rect.left) * scaleX;
+    const y = (point.clientY - rect.top) * scaleY;
 
     // Only draw if within canvas bounds
-    if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+    if (x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height) {
       const ctx = canvas.getContext('2d');
 
       if (selectedTool === 'eraser') {
-        const size = 16;
+        const size = canvas.width * (16/879); // Scale eraser size
         ctx.clearRect(
           x - size / 2,
           y - size / 2,
@@ -142,7 +187,7 @@ export default function PostcardCustomizer() {
       } else {
         ctx.lineTo(x, y);
         ctx.strokeStyle = selectedTool === 'pencil' ? drawingColor : `${drawingColor}80`;
-        ctx.lineWidth = selectedTool === 'pencil' ? 2 : 8;
+        ctx.lineWidth = selectedTool === 'pencil' ? canvas.width * (2/879) : canvas.width * (8/879);
         ctx.stroke();
       }
     }
@@ -180,14 +225,13 @@ export default function PostcardCustomizer() {
   const generatePreview = () => {
     // Create a temporary canvas for the combined preview
     const previewCanvas = document.createElement('canvas');
+    const ctx = previewCanvas.getContext('2d');
     
     // Set fixed square canvas dimensions
     const canvasWidth = 1500;
     const canvasHeight = 1500;
-    
     previewCanvas.width = canvasWidth;
     previewCanvas.height = canvasHeight;
-    const ctx = previewCanvas.getContext('2d');
 
     // Load and draw background image
     const bgImg = new Image();
@@ -214,14 +258,15 @@ export default function PostcardCustomizer() {
       ctx.drawImage(bgImg, x, y, drawWidth, drawHeight);
 
       // Load and draw postcard content
-      const img = new Image();
-      img.onload = () => {
+      const frontImg = new Image();
+      frontImg.crossOrigin = "anonymous";
+      frontImg.onload = () => {
         // Calculate card dimensions and positions
         const cardWidth = 879;
         const cardHeight = 591;
         const scale = 1.2;  // Larger scale for better visibility
         const padding = 16 * scale; // Scale the padding with the card
-        
+
         // Center horizontally and position vertically
         const frontX = (canvasWidth - cardWidth * scale) / 2;
         const frontY = canvasHeight * 0.05;  // Moved up to 15% from top
@@ -272,7 +317,7 @@ export default function PostcardCustomizer() {
             const paddedY = y + padding;
             const paddedWidth = w - (padding * 2);
             const paddedHeight = h - (padding * 2);
-            ctx.drawImage(img, paddedX, paddedY, paddedWidth, paddedHeight);
+            ctx.drawImage(frontImg, paddedX, paddedY, paddedWidth, paddedHeight);
             ctx.drawImage(frontCanvasRef.current, paddedX, paddedY, paddedWidth, paddedHeight);
           }
         );
@@ -286,10 +331,10 @@ export default function PostcardCustomizer() {
           -2,  // Slight rotation
           (x, y, w, h) => {
             ctx.drawImage(staticCanvasRef.current, x, y, w, h);
-            
+
             // Draw text content
             const textarea = document.querySelector('textarea');
-            if (textarea) {
+            if (textarea && textarea.value) {
               ctx.font = `${24 * scale}px ${selectedFont}`;
               ctx.fillStyle = textColor;
               
@@ -298,31 +343,17 @@ export default function PostcardCustomizer() {
               const maxWidth = (w / 2) - (40 * scale);
               const textX = x + (36 * scale);
 
-              lines.forEach(text => {
-                const words = text.split(' ');
-                let line = '';
-                
-                words.forEach(word => {
-                  const testLine = line + word + ' ';
-                  const metrics = ctx.measureText(testLine);
-                  if (metrics.width > maxWidth) {
-                    ctx.fillText(line, textX, textY);
-                    line = word + ' ';
-                    textY += 24 * scale;
-                  } else {
-                    line = testLine;
-                  }
-                });
-                ctx.fillText(line, textX, textY);
+              lines.forEach(line => {
+                ctx.fillText(line, textX, textY, maxWidth);
                 textY += 24 * scale;
               });
             }
           }
         );
 
-        setShowPreview(previewCanvas.toDataURL());
+        setShowPreview(previewCanvas.toDataURL('image/png'));
       };
-      img.src = uploadedImage;
+      frontImg.src = uploadedImage;
     };
     bgImg.src = previewBackground;
   };
@@ -366,25 +397,27 @@ export default function PostcardCustomizer() {
                 1. Upload and draw
               </h2>
               <div className="relative w-full">
-                <div className="w-full aspect-[879/591] bg-white shadow-md">
-                  <canvas
-                    ref={frontCanvasRef}
-                    width={879}
-                    height={591}
-                    className="absolute inset-0 touch-none"
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
-                    onTouchStart={startDrawing}
-                    onTouchMove={draw}
-                    onTouchEnd={stopDrawing}
-                    onTouchCancel={stopDrawing}
-                  ></canvas>
+                <div className="w-full aspect-[879/591] bg-white shadow-md relative overflow-hidden">
                   <img
                     src={uploadedImage}
                     alt="Postcard Front"
                     className="w-full h-full object-cover p-4 box-border pointer-events-none"
+                  />
+                  <canvas
+                    ref={frontCanvasRef}
+                    className="absolute inset-0 w-full h-full touch-none"
+                    style={{
+                      width: '100%',
+                      height: '100%'
+                    }}
+                    onTouchStart={startDrawing}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDrawing}
+                    onTouchCancel={stopDrawing}
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
                   />
                   <input
                     id="imageUpload"
@@ -394,8 +427,18 @@ export default function PostcardCustomizer() {
                     onChange={handleImageUpload}
                   />
                 </div>
+                
+                {/* Upload Button */}
+                <button
+                  onClick={() => document.getElementById('imageUpload').click()}
+                  className="w-full mt-4 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all flex items-center justify-center gap-2 relative z-10"
+                >
+                  <Upload size={20} />
+                  Upload Photo
+                </button>
+
                 {/* Front Toolbar */}
-                <div className="mt-4">
+                <div className="mt-4 relative z-10">
                   <Toolbar
                     currentSide="front"
                     selectedTool={selectedTool}
@@ -408,8 +451,8 @@ export default function PostcardCustomizer() {
                     onTextColorChange={setTextColor}
                     onFontChange={setSelectedFont}
                     onClear={clearCanvas}
-                    onUpload={() => document.getElementById('imageUpload').click()}
                     isMobile={isMobile}
+                    hideUpload={true}
                   />
                 </div>
               </div>
@@ -421,31 +464,33 @@ export default function PostcardCustomizer() {
                 2. Write your message
               </h2>
               <div className="relative w-full">
-                <div className="w-full aspect-[879/591] bg-white shadow-md">
-                  <div className="absolute inset-4">
+                <div className="w-full aspect-[879/591] bg-white shadow-md relative overflow-hidden">
+                  <canvas
+                    ref={staticCanvasRef}
+                    className="absolute inset-0 w-full h-full"
+                    style={{
+                      width: '100%',
+                      height: '100%'
+                    }}
+                  />
+                  <div className="absolute inset-0 p-8">
                     <textarea
-                      className="w-full h-full resize-none p-4 bg-transparent focus:outline-none"
-                      placeholder="Tap here write your message"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Write your message here..."
+                      className="w-1/2 h-full resize-none bg-transparent focus:outline-none"
                       style={{
                         fontFamily: selectedFont,
                         color: textColor,
-                        fontSize: "16px"
-                      }}
-                      onFocus={() => setIsTextareaActive(true)}
-                      onBlur={(e) => {
-                        setTimeout(() => {
-                          const activeElement = document.activeElement;
-                          const isControlsContainer = activeElement?.closest('.controls-container');
-                          if (!isControlsContainer) {
-                            setIsTextareaActive(false);
-                          }
-                        }, 0);
+                        fontSize: '24px',
+                        lineHeight: '1.5',
                       }}
                     />
                   </div>
                 </div>
+
                 {/* Back Toolbar */}
-                <div className="mt-4">
+                <div className="mt-4 relative z-10">
                   <Toolbar
                     currentSide="back"
                     selectedTool={selectedTool}
@@ -463,97 +508,83 @@ export default function PostcardCustomizer() {
               </div>
             </div>
 
-            {/* Section 3: Preview */}
-            <div>
-              <h2 className="text-xl text-slate-900 mb-4" style={{ fontFamily: 'PP Editorial New', fontStyle: 'italic' }}>
-                3. Preview and download
-              </h2>
-              <button
-                onClick={() => {
-                  if (!showPreview) {
-                    generatePreview();
-                  }
-                  setShowPreview(true);
-                }}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#2F2F2F] text-white rounded-lg hover:bg-black transition-colors"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4 16L8.586 11.414C8.96106 11.0391 9.46967 10.8284 10 10.8284C10.5303 10.8284 11.0389 11.0391 11.414 11.414L16 16M14 14L15.586 12.414C15.9611 12.0391 16.4697 11.8284 17 11.8284C17.5303 11.8284 18.0389 12.0391 18.414 12.414L20 14M14 8H14.01M6 20H18C18.5304 20 19.0391 19.7893 19.4142 19.4142C19.7893 19.0391 20 18.5304 20 18V6C20 5.46957 19.7893 4.96086 19.4142 4.58579C19.0391 4.21071 18.5304 4 18 4H6C5.46957 4 4.96086 4.21071 4.58579 4.58579C4.21071 4.96086 4 5.46957 4 6V18C4 18.5304 4.21071 19.0391 4.58579 19.4142C4.96086 19.7893 5.46957 20 6 20Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Preview postcard image
-              </button>
-            </div>
+            {/* Preview Button */}
+            <button
+              onClick={() => {
+                generatePreview();
+                setShowPreview(true);
+              }}
+              className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all flex items-center justify-center gap-2 relative z-10"
+            >
+              <Eye size={20} />
+              Preview Postcard
+            </button>
           </div>
         )}
 
         {/* Desktop View */}
         {!isMobile && (
-          <>
-            <div className="relative w-full aspect-[879/591] perspective">
-              <div
-                className="absolute inset-0 w-full h-full transition-transform duration-700 transform-style-preserve-3d"
-                style={{
-                  transform: currentSide === 'back' ? 'rotateY(180deg)' : ''
-                }}
-              >
-                {/* Front Side */}
-                <div className="absolute w-full h-full backface-hidden bg-white shadow-md flex items-center justify-center touch-none">
-                  <canvas
-                    ref={frontCanvasRef}
-                    width={879}
-                    height={591}
-                    className="absolute inset-0 touch-none"
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
-                    onTouchStart={startDrawing}
-                    onTouchMove={draw}
-                    onTouchEnd={stopDrawing}
-                    onTouchCancel={stopDrawing}
-                  ></canvas>
-                  <img
-                    src={uploadedImage}
-                    alt="Postcard Front"
-                    className="w-full h-full object-cover p-4 box-border pointer-events-none"
-                  />
-                  <input
-                    id="imageUpload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageUpload}
-                  />
-                </div>
-
-                {/* Back Side */}
-                <div className="absolute w-full h-full rotate-y-180 backface-hidden bg-white shadow-md flex items-center justify-center">
-                  <canvas
-                    ref={staticCanvasRef}
-                    width={879}
-                    height={591}
-                    className="absolute inset-0 pointer-events-none"
-                  ></canvas>
-                  <div className="absolute inset-9 flex z-0">
-                    <textarea
-                      className="w-[50%] h-full resize-none p-4 bg-transparent focus:outline-none"
-                      placeholder="Type your message here..."
-                      style={{
-                        fontFamily: selectedFont,
-                        color: textColor,
-                        fontSize: "20px"
-                      }}
-                      onFocus={() => setIsTextareaActive(true)}
-                      onBlur={(e) => {
-                        setTimeout(() => {
-                          const activeElement = document.activeElement;
-                          const isControlsContainer = activeElement?.closest('.controls-container');
-                          if (!isControlsContainer) {
-                            setIsTextareaActive(false);
-                          }
-                        }, 0);
-                      }}
+          <div className="relative">
+            <div className="w-full py-4">
+              <div className="relative w-full aspect-[879/591] perspective">
+                <div
+                  className="absolute inset-0 w-full h-full transition-transform duration-700 transform-style-preserve-3d"
+                  style={{
+                    transform: currentSide === 'back' ? 'rotateY(180deg)' : ''
+                  }}
+                >
+                  {/* Front Side */}
+                  <div className="absolute w-full h-full backface-hidden bg-white shadow-md flex items-center justify-center touch-none">
+                    <canvas
+                      ref={frontCanvasRef}
+                      width={879}
+                      height={591}
+                      className="absolute inset-0 touch-none"
+                      onMouseDown={startDrawing}
+                      onMouseMove={draw}
+                      onMouseUp={stopDrawing}
+                      onMouseLeave={stopDrawing}
+                      onTouchStart={startDrawing}
+                      onTouchMove={draw}
+                      onTouchEnd={stopDrawing}
+                      onTouchCancel={stopDrawing}
+                    ></canvas>
+                    <img
+                      src={uploadedImage}
+                      alt="Postcard Front"
+                      className="w-full h-full object-cover p-4 box-border pointer-events-none"
                     />
+                    <input
+                      id="imageUpload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                    />
+                  </div>
+
+                  {/* Back Side */}
+                  <div className="absolute w-full h-full backface-hidden bg-white shadow-md rotate-y-180">
+                    <canvas
+                      ref={staticCanvasRef}
+                      width={879}
+                      height={591}
+                      className="absolute inset-0"
+                    ></canvas>
+                    <div className="absolute inset-0 p-8">
+                      <textarea
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder="Write your message here..."
+                        className="w-1/2 h-full resize-none bg-transparent focus:outline-none"
+                        style={{
+                          fontFamily: selectedFont,
+                          color: textColor,
+                          fontSize: '24px',
+                          lineHeight: '1.5',
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -587,14 +618,14 @@ export default function PostcardCustomizer() {
                 isMobile={isMobile}
               />
             </div>
-          </>
+          </div>
         )}
       </div>
 
       {/* Preview Modal */}
       {showPreview && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white w-[70%] h-[80%] flex flex-col rounded-lg overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="w-[calc(100%-32px)] md:w-[70%] h-[80%] bg-white rounded-lg flex flex-col overflow-hidden">
             {/* Header */}
             <div className="p-4 flex-shrink-0 border-b">
               <div className="flex justify-between items-center">
@@ -609,18 +640,20 @@ export default function PostcardCustomizer() {
               </div>
             </div>
 
-            {/* Content - Full height preview */}
+            {/* Content */}
             <div className="flex-1 bg-gray-100 flex items-center justify-center p-4 min-h-0 overflow-auto">
               <div className="relative w-full h-full flex items-center justify-center">
-                <img
-                  src={showPreview}
-                  alt="Postcard Preview"
-                  className="max-w-full max-h-full object-contain rounded-lg shadow-md"
-                />
+                {typeof showPreview === 'string' && (
+                  <img
+                    src={showPreview}
+                    alt="Postcard Preview"
+                    className="max-w-full max-h-full object-contain rounded-lg shadow-md"
+                  />
+                )}
               </div>
             </div>
 
-            {/* Footer - Fixed at bottom */}
+            {/* Footer */}
             <div className="p-4 flex-shrink-0 border-t bg-gray-50">
               <div className="flex justify-end gap-3">
                 <button
@@ -629,13 +662,15 @@ export default function PostcardCustomizer() {
                 >
                   Close
                 </button>
-                <a
-                  href={showPreview}
-                  download="my-postcard.png"
-                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all"
-                >
-                  Download
-                </a>
+                {typeof showPreview === 'string' && (
+                  <a
+                    href={showPreview}
+                    download="my-postcard.png"
+                    className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all"
+                  >
+                    Download
+                  </a>
+                )}
               </div>
             </div>
           </div>
