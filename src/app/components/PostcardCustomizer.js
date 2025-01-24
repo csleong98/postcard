@@ -87,13 +87,15 @@ export default function PostcardCustomizer() {
         ctx.strokeStyle = '#cccccc';
         ctx.lineWidth = 1;
         
-        // Scale stamp box and divider line
+        // Scale stamp box and divider line with larger padding for mobile
+        const padding = isMobile ? width * (32/879) : width * (16/879);
         const stampWidth = width * (120/879);
         const stampHeight = height * (160/591);
-        const padding = width * (16/879);
         
+        // Draw stamp box
         ctx.strokeRect(width - stampWidth - padding, padding, stampWidth, stampHeight);
         
+        // Draw divider line
         ctx.beginPath();
         ctx.moveTo(width / 2, padding);
         ctx.lineTo(width / 2, height - padding);
@@ -375,17 +377,6 @@ export default function PostcardCustomizer() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      {/* Title */}
-      <h1 
-        className="text-slate-900 text-2xl md:text-4xl mb-4 md:mb-8 text-center"
-        style={{
-          fontFamily: 'PP Editorial New',
-          fontWeight: 'italic',
-          fontStyle: 'italic',
-        }}
-      >
-        Make your own postcard
-      </h1>
 
       <div className="relative w-full max-w-[879.04px]">
         {/* Mobile Sections */}
@@ -473,7 +464,7 @@ export default function PostcardCustomizer() {
                       height: '100%'
                     }}
                   />
-                  <div className="absolute inset-0 p-8">
+                  <div className="absolute inset-0 p-4 md:p-8">
                     <textarea
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
@@ -482,7 +473,7 @@ export default function PostcardCustomizer() {
                       style={{
                         fontFamily: selectedFont,
                         color: textColor,
-                        fontSize: '24px',
+                        fontSize: isMobile ? '16px' : '24px',
                         lineHeight: '1.5',
                       }}
                     />
@@ -514,7 +505,7 @@ export default function PostcardCustomizer() {
                 generatePreview();
                 setShowPreview(true);
               }}
-              className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all flex items-center justify-center gap-2 relative z-10"
+              className="w-full px-4 py-2 bg-[#2F2F2F] text-white rounded-lg hover:bg-black transition-all flex items-center justify-center gap-2 relative z-10"
             >
               <Eye size={20} />
               Preview Postcard

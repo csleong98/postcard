@@ -7,6 +7,7 @@ const IconButton = ({
   onClick,
   isColorIndicator,
   color = '#222222',
+  onColorChange,
   tooltip
 }) => {
   const baseStyles = "inline-flex justify-center items-center p-3 rounded-lg transition-colors";
@@ -17,10 +18,30 @@ const IconButton = ({
       : "hover:bg-gray-50";
 
   if (isColorIndicator) {
+    const handleColorClick = (e) => {
+      const button = e.currentTarget;
+      const rect = button.getBoundingClientRect();
+      const input = document.createElement('input');
+      input.type = 'color';
+      input.value = color;
+      input.style.position = 'fixed';
+      input.style.top = `${rect.top - 40}px`;  // Position 40px above the button
+      input.style.left = `${rect.right}px`;
+      input.style.opacity = '0';
+      
+      input.addEventListener('change', (e) => {
+        onColorChange(e.target.value);
+        document.body.removeChild(input);
+      });
+      
+      document.body.appendChild(input);
+      input.click();
+    };
+
     return (
       <button 
         className={`${baseStyles} ${stateStyles}`}
-        onClick={onClick}
+        onClick={handleColorClick}
         disabled={isDisabled}
         title={tooltip}
       >

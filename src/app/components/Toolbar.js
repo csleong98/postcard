@@ -41,30 +41,12 @@ export default function Toolbar({
   isMobile,
   hideUpload
 }) {
-  const [showColorPicker, setShowColorPicker] = React.useState(false);
   const [showFontDropdown, setShowFontDropdown] = React.useState(false);
-  const colorPickerRef = useRef(null);
-  const toolbarRef = useRef(null);
-  const colorPickerInputRef = useRef(null);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
     function handleClickOutside(event) {
-      // Don't close if clicking on the color picker dialog
-      if (event.target.type === 'color') return;
-
-      const clickedOutsideColorPicker = colorPickerRef.current && 
-        !colorPickerRef.current.contains(event.target) &&
-        !toolbarRef.current.contains(event.target);
-      
-      if (clickedOutsideColorPicker) {
-        setShowColorPicker(false);
-      }
-
-      const clickedOutsideDropdown = dropdownRef.current && 
-        !dropdownRef.current.contains(event.target);
-      
-      if (clickedOutsideDropdown) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowFontDropdown(false);
       }
     }
@@ -72,16 +54,6 @@ export default function Toolbar({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    setShowColorPicker(false);
-  }, [selectedTool]);
-
-  useEffect(() => {
-    if (showColorPicker && colorPickerInputRef.current) {
-      colorPickerInputRef.current.click();
-    }
-  }, [showColorPicker]);
 
   const FontDropdown = () => (
     <div ref={dropdownRef} className="relative">
@@ -120,7 +92,7 @@ export default function Toolbar({
   );
 
   const renderFrontTools = () => (
-    <div className="flex items-center gap-2">
+    <div className={`flex items-center ${isMobile ? 'w-full justify-between' : 'gap-2'}`}>
       {!hideUpload && (
         <IconButton
           icon={<Upload size={20} />}
@@ -140,30 +112,12 @@ export default function Toolbar({
         onClick={() => onToolSelect('marker')}
         tooltip="Marker"
       />
-      <div ref={colorPickerRef} className="relative">
-        <IconButton
-          isColorIndicator
-          color={drawingColor}
-          isActive={showColorPicker}
-          onClick={() => setShowColorPicker(!showColorPicker)}
-          tooltip="Drawing Color"
-        />
-        <input
-          ref={colorPickerInputRef}
-          type="color"
-          value={drawingColor}
-          onChange={(e) => onColorChange(e.target.value)}
-          className="absolute opacity-0 cursor-pointer"
-          style={{ 
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            zIndex: showColorPicker ? 10 : -1,
-            pointerEvents: showColorPicker ? 'auto' : 'none'
-          }}
-        />
-      </div>
+      <IconButton
+        isColorIndicator
+        color={drawingColor}
+        onColorChange={onColorChange}
+        tooltip="Drawing Color"
+      />
       <IconButton
         icon={<Eraser size={20} />}
         isActive={selectedTool === 'eraser'}
@@ -179,35 +133,19 @@ export default function Toolbar({
   );
 
   const renderBackTools = () => (
-    <>
+    <div className={`flex items-center ${isMobile ? 'w-full justify-between' : 'gap-2'}`}>
       <FontDropdown />
-      <div ref={colorPickerRef} className="relative">
-        <IconButton
-          isColorIndicator
-          color={textColor}
-          isActive={showColorPicker}
-          onClick={() => setShowColorPicker(!showColorPicker)}
-          tooltip="Text Color"
-        />
-        <input
-          ref={colorPickerInputRef}
-          type="color"
-          value={textColor}
-          onChange={(e) => onTextColorChange(e.target.value)}
-          className="absolute opacity-0 w-px h-px"
-          style={{ 
-            top: '-6px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            pointerEvents: showColorPicker ? 'auto' : 'none'
-          }}
-        />
-      </div>
-    </>
+      <IconButton
+        isColorIndicator
+        color={textColor}
+        onColorChange={onTextColorChange}
+        tooltip="Text Color"
+      />
+    </div>
   );
 
   return (
-    <div className="relative" ref={toolbarRef}>
+    <div className="relative">
       <div className={`inline-flex items-center p-2.5 gap-4 rounded-2xl border border-[#E4E4E4] bg-white shadow-[0px_1px_4px_0px_rgba(0,0,0,0.10)] transition-all duration-300 ease-in-out ${isMobile ? 'w-full justify-between' : ''}`}>
         {currentSide === 'front' ? renderFrontTools() : renderBackTools()}
         {!isMobile && (
