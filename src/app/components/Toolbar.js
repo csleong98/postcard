@@ -145,7 +145,7 @@ export default function Toolbar({
   );
 
   return (
-    <div className="relative">
+    <div className="flex justify-center">
       <div className={`inline-flex items-center p-2.5 gap-4 rounded-2xl border border-[#E4E4E4] bg-white shadow-[0px_1px_4px_0px_rgba(0,0,0,0.10)] transition-all duration-300 ease-in-out ${isMobile ? 'w-full justify-between' : ''}`}>
         {currentSide === 'front' ? renderFrontTools() : renderBackTools()}
         {!isMobile && (

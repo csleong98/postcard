@@ -376,7 +376,7 @@ export default function PostcardCustomizer() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+    <div className="flex flex-col items-center justify-center">
 
       <div className="relative w-full max-w-[879.04px]">
         {/* Mobile Sections */}
@@ -516,7 +516,7 @@ export default function PostcardCustomizer() {
         {/* Desktop View */}
         {!isMobile && (
           <div className="relative">
-            <div className="w-full py-4">
+            <div className="w-full mb-4">
               <div className="relative w-full aspect-[879/591] perspective">
                 <div
                   className="absolute inset-0 w-full h-full transition-transform duration-700 transform-style-preserve-3d"
@@ -581,7 +581,7 @@ export default function PostcardCustomizer() {
               </div>
             </div>
             {/* Desktop Toolbar */}
-            <div className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-[calc(100%+24px)] w-auto">
+            <div className='w-full'>
               <Toolbar
                 currentSide={currentSide}
                 selectedTool={selectedTool}
