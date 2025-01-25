@@ -10,9 +10,8 @@ const IconButton = ({
   onColorChange,
   tooltip
 }) => {
-  const colorInputRef = useRef(null); // Create a ref for the color input
-
-  const baseStyles = "inline-flex justify-center items-center p-3 rounded-lg transition-colors relative"; // Add relative positioning
+  const colorInputRef = useRef(null);
+  const baseStyles = "inline-flex justify-center items-center p-3 rounded-lg transition-colors relative";
   const stateStyles = isDisabled
     ? "opacity-50 cursor-not-allowed bg-gray-50"
     : isActive
@@ -21,7 +20,7 @@ const IconButton = ({
 
   const handleColorClick = () => {
     if (colorInputRef.current) {
-      colorInputRef.current.click(); // Trigger the color input click
+      colorInputRef.current.click();
     }
   };
 
@@ -31,21 +30,30 @@ const IconButton = ({
 
   if (isColorIndicator) {
     return (
-      <div className="relative"> {/* Container for positioning */}
+      <div className="relative">
         <input
           type="color"
-          ref={colorInputRef} // Attach the ref to the input
+          ref={colorInputRef}
           value={color}
           onChange={handleColorChange}
-          style={{ position: 'absolute', top: 0, left: 0, opacity: 0, width: '100%', height: '100%' }} // Hide the input but keep it clickable
+          style={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: 0, 
+            opacity: 0, 
+            width: '100%', 
+            height: '100%', 
+            cursor: 'pointer',
+            zIndex: 0
+          }}
         />
         <button
           className={`${baseStyles} ${stateStyles}`}
-          onClick={handleColorClick}
           disabled={isDisabled}
           title={tooltip}
+          style={{ pointerEvents: 'none' }}  // Disable button clicks
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ position: 'relative', zIndex: 1 }}> {/* Ensure SVG is on top */}
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ position: 'relative', zIndex: 1 }}>
             <g filter="url(#filter0_d_35_982)">
               <circle cx="12" cy="12" r="8" fill="white" />
             </g>
