@@ -3,7 +3,6 @@
   "name": "postcard",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://postcards.my",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
