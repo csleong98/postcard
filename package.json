@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d out"
+    "deploy": "cp .nojekyll out/ && gh-pages -d out"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.7",
