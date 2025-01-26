@@ -112,14 +112,29 @@ export default function PostcardCustomizer() {
     setCurrentSide(currentSide === 'front' ? 'back' : 'front');
   };
 
+  // Add this useEffect to monitor image updates
+  useEffect(() => {
+    console.log('uploadedImage changed:', uploadedImage);
+  }, [uploadedImage]);
+
   const handleImageUpload = (event) => {
+    console.log('Upload handler triggered'); // Debug log
     const file = event.target.files[0];
     if (file) {
+      console.log('File selected:', file.name); // Debug log
       const reader = new FileReader();
       reader.onload = (event) => {
-        setUploadedImage(event.target.result);
+        console.log('File read complete'); // Debug log
+        const result = event.target.result;
+        console.log('Image data length:', result.length); // Debug log
+        setUploadedImage(result);
+      };
+      reader.onerror = (error) => {
+        console.error('Error reading file:', error);
       };
       reader.readAsDataURL(file);
+    } else {
+      console.log('No file selected'); // Debug log
     }
   };
 
@@ -244,13 +259,11 @@ export default function PostcardCustomizer() {
       let drawWidth, drawHeight, x, y;
 
       if (bgAspect > canvasAspect) {
-        // Background is wider than canvas
         drawHeight = canvasHeight;
         drawWidth = drawHeight * bgAspect;
         x = (canvasWidth - drawWidth) / 2;
         y = 0;
       } else {
-        // Background is taller than canvas
         drawWidth = canvasWidth;
         drawHeight = drawWidth / bgAspect;
         x = 0;
@@ -266,81 +279,83 @@ export default function PostcardCustomizer() {
         // Calculate card dimensions and positions
         const cardWidth = 879;
         const cardHeight = 591;
-        const scale = 1.2;  // Larger scale for better visibility
-        const padding = 16 * scale; // Scale the padding with the card
+        const scale = 1.2;
+        const padding = 16 * scale;
 
         // Center horizontally and position vertically
         const frontX = (canvasWidth - cardWidth * scale) / 2;
-        const frontY = canvasHeight * 0.05;  // Moved up to 15% from top
-        const backX = frontX - 15;  // Slight offset for depth
-        const backY = canvasHeight * 0.45;  // Adjusted to maintain spacing
+        const frontY = canvasHeight * 0.05;
+        const backX = frontX - 15;
+        const backY = canvasHeight * 0.45;
 
         // Helper function to draw a rotated card with shadow
         const drawRotatedCard = (x, y, width, height, rotation, drawContent) => {
           ctx.save();
-          
-          // Move to center point for rotation
           ctx.translate(x + width / 2, y + height / 2);
           ctx.rotate((rotation * Math.PI) / 180);
           ctx.translate(-(x + width / 2), -(y + height / 2));
-
-          // Add shadow (less prominent)
           ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
           ctx.shadowBlur = 15;
           ctx.shadowOffsetX = 0;
           ctx.shadowOffsetY = 4;
-
-          // Draw white background with shadow
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(x, y, width, height);
-
-          // Remove shadow for content
           ctx.shadowColor = 'transparent';
           ctx.shadowBlur = 0;
           ctx.shadowOffsetX = 0;
           ctx.shadowOffsetY = 0;
-
-          // Draw the content
           drawContent(x, y, width, height);
-
           ctx.restore();
         };
 
-        // Draw front card first (will be behind)
+        // Draw front card
         drawRotatedCard(
           frontX, 
           frontY, 
           cardWidth * scale, 
           cardHeight * scale,
-          2,  // Slight rotation in opposite direction
+          2,
           (x, y, w, h) => {
-            // Draw the image with padding
             const paddedX = x + padding;
             const paddedY = y + padding;
             const paddedWidth = w - (padding * 2);
             const paddedHeight = h - (padding * 2);
             ctx.drawImage(frontImg, paddedX, paddedY, paddedWidth, paddedHeight);
-            ctx.drawImage(frontCanvasRef.current, paddedX, paddedY, paddedWidth, paddedHeight);
+            // Draw the front canvas content for both mobile and desktop
+            const frontCanvas = frontCanvasRef.current;
+            if (frontCanvas) {
+              ctx.drawImage(frontCanvas, paddedX, paddedY, paddedWidth, paddedHeight);
+            }
           }
         );
 
-        // Draw back card last (will be on top)
+        // Draw back card
         drawRotatedCard(
           backX, 
           backY, 
           cardWidth * scale, 
           cardHeight * scale,
-          -2,  // Slight rotation
+          -2,
           (x, y, w, h) => {
-            ctx.drawImage(staticCanvasRef.current, x, y, w, h);
+            // Draw static canvas content
+            const staticCanvas = staticCanvasRef.current;
+            if (staticCanvas) {
+              ctx.drawImage(staticCanvas, x, y, w, h);
+            }
 
-            // Draw text content
-            const textarea = document.querySelector('textarea');
-            if (textarea && textarea.value) {
+            // Draw text content - handle both mobile and desktop
+            const textareas = document.querySelectorAll('textarea');
+            let textContent = '';
+            textareas.forEach(textarea => {
+              if (textarea.value) {
+                textContent = textarea.value;
+              }
+            });
+
+            if (textContent) {
               ctx.font = `${24 * scale}px ${selectedFont}`;
               ctx.fillStyle = textColor;
-              
-              const lines = textarea.value.split('\n');
+              const lines = textContent.split('\n');
               let textY = y + (36 * scale);
               const maxWidth = (w / 2) - (40 * scale);
               const textX = x + (36 * scale);
@@ -410,6 +425,10 @@ export default function PostcardCustomizer() {
                     onMouseUp={stopDrawing}
                     onMouseLeave={stopDrawing}
                   />
+                </div>
+
+                {/* Mobile Upload Section */}
+                <div className="relative">
                   <input
                     id="imageUpload"
                     type="file"
@@ -417,34 +436,19 @@ export default function PostcardCustomizer() {
                     className="hidden"
                     onChange={handleImageUpload}
                   />
-                </div>
-                
-                {/* Upload Button */}
-                <button
-                  onClick={() => document.getElementById('imageUpload').click()}
-                  className="w-full mt-4 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all flex items-center justify-center gap-2 relative z-10"
-                >
-                  <Upload size={20} />
-                  Upload Photo
-                </button>
-
-                {/* Front Toolbar */}
-                <div className="mt-4 relative z-10">
-                  <Toolbar
-                    currentSide="front"
-                    selectedTool={selectedTool}
-                    drawingColor={drawingColor}
-                    textColor={textColor}
-                    selectedFont={selectedFont}
-                    fontOptions={fontOptions}
-                    onToolSelect={setSelectedTool}
-                    onColorChange={setDrawingColor}
-                    onTextColorChange={setTextColor}
-                    onFontChange={setSelectedFont}
-                    onClear={clearCanvas}
-                    isMobile={isMobile}
-                    hideUpload={true}
-                  />
+                  <button
+                    onClick={() => {
+                      console.log('Mobile upload clicked');  // Debug log
+                      const input = document.getElementById('imageUpload');
+                      if (input) {
+                        input.click();
+                      }
+                    }}
+                    className="w-full mt-4 px-4 py-2 bg-[#2F2F2F] text-white rounded-lg hover:bg-black transition-all flex items-center justify-center gap-2 relative z-10"
+                  >
+                    <Upload size={20} />
+                    Upload Photo
+                  </button>
                 </div>
               </div>
             </div>
@@ -657,7 +661,7 @@ export default function PostcardCustomizer() {
                   <a
                     href={showPreview}
                     download="my-postcard.png"
-                    className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all"
+                    className="px-4 py-2 rounded-lg bg-[#2F2F2F] text-white hover:bg-black transition-all"
                   >
                     Download
                   </a>
