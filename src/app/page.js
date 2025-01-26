@@ -10,7 +10,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="section-spacing">
         {/* Text Container */}
-        <div className="container-custom flex flex-col items-center justify-center text-center mb-10">
+        <div className="container-custom flex flex-col items-center justify-center text-center">
           <h1 className="h1 mb-4 text-slate-900">
             Recreating the joy of sending<br />postcards to your loved ones online
           </h1>
@@ -93,7 +93,7 @@ export default function Home() {
         <div className="container-custom">
           <div className="text-center mb-6">
             <h2 className="h2 mb-4 text-slate-900">
-              Craft your postcard and send it
+              Craft your postcard here
             </h2>
             <p className="body-large text-[#252525]">
               No sign ups and logins. You just dive straight right in to making your postcard
@@ -122,17 +122,17 @@ export default function Home() {
                 This is the first version of Postcards and I understand it might be lacking a lot of things. If you have feedback towards it. Please don't hesitate to send me an email or message me on these social media platforms.
               </p>
               <div className="flex gap-4">
-                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-slate-900">
-                  <InstagramLogo size={24} weight="fill" />
+                <a href="https://instagram.com/csleong98" target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-slate-900">
+                  <InstagramLogo size={32} />
                 </a>
-                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-slate-900">
-                  <LinkedinLogo size={24} weight="fill" />
+                <a href="https://linkedin.com/in/csleong98" target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-slate-900">
+                  <LinkedinLogo size={32} />
                 </a>
-                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-slate-900">
-                  <TwitterLogo size={24} weight="fill" />
+                <a href="https://twitter.com/csleong98" target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-slate-900">
+                  <TwitterLogo size={32} />
                 </a>
-                <a href="mailto:example@email.com" className="text-slate-700 hover:text-slate-900">
-                  <EnvelopeSimple size={24} weight="fill" />
+                <a href="mailto:macintoshleong@email.com" className="text-slate-700 hover:text-slate-900">
+                  <EnvelopeSimple size={32} />
                 </a>
               </div>
             </div>
