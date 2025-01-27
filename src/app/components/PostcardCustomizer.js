@@ -430,25 +430,26 @@ export default function PostcardCustomizer() {
                 {/* Mobile Upload Section */}
                 <div className="relative">
                   <input
-                    id="imageUpload"
                     type="file"
                     accept="image/*"
-                    className="hidden"
                     onChange={handleImageUpload}
-                  />
-                  <button
-                    onClick={() => {
-                      console.log('Mobile upload clicked');  // Debug log
-                      const input = document.getElementById('imageUpload');
-                      if (input) {
-                        input.click();
-                      }
+                    className="w-full mt-4 text-sm text-transparent
+                      file:mr-4 file:py-2 file:px-4 
+                      file:rounded-lg file:border-0 
+                      file:text-white file:bg-[#2F2F2F] 
+                      file:hover:bg-black file:transition-all
+                      file:cursor-pointer file:text-sm
+                      file:flex file:items-center file:justify-center
+                      file:w-full file:h-full
+                      cursor-pointer"
+                    style={{
+                      color: 'transparent',
                     }}
-                    className="w-full mt-4 px-4 py-2 bg-[#2F2F2F] text-white rounded-lg hover:bg-black transition-all flex items-center justify-center gap-2 relative z-10"
-                  >
-                    <Upload size={20} />
-                    Upload Photo
-                  </button>
+                  />
+                  {/* <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center gap-2 mt-2">
+                    <Upload size={20} className="text-white" />
+                    <span className="text-white">Upload Photo</span>
+                  </div> */}
                 </div>
 
                 {/* Front Toolbar */}
