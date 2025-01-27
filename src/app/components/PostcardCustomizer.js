@@ -450,6 +450,25 @@ export default function PostcardCustomizer() {
                     Upload Photo
                   </button>
                 </div>
+
+                {/* Front Toolbar */}
+                <div className="mt-4 relative z-10">
+                  <Toolbar
+                    currentSide="front"
+                    selectedTool={selectedTool}
+                    drawingColor={drawingColor}
+                    textColor={textColor}
+                    selectedFont={selectedFont}
+                    fontOptions={fontOptions}
+                    onToolSelect={setSelectedTool}
+                    onColorChange={setDrawingColor}
+                    onTextColorChange={setTextColor}
+                    onFontChange={setSelectedFont}
+                    onClear={clearCanvas}
+                    isMobile={isMobile}
+                    hideUpload={true}
+                  />
+                </div>
               </div>
             </div>
 
