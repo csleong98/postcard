@@ -9,25 +9,42 @@ export default function Home() {
     <main className="min-h-screen">
       {/* Hero Section */}
       <section className="section-spacing">
+        {/* Mobile Hero Image */}
+        <div className="md:hidden w-full mb-16">
+          <img 
+            src="/images/illustration/hero-img.png" 
+            alt="Hero" 
+            className="w-full h-[400px] object-cover"
+          />
+        </div>
         {/* Text Container */}
-        <div className="container-custom flex flex-col items-center justify-center text-center">
+        <div className="container-custom flex flex-col items-center justify-center text-center mb-4">
           <h1 className="h1 mb-4 text-slate-900">
-            Recreating the joy of sending<br />postcards to your loved ones online
+            Recreate the joy of sending<br />postcards to your loved ones online
           </h1>
           <p className="body-large text-[#252525] max-w-2xl">
-            Still remember the feeling of love and warm when you receive postcards from your friends or family? Well now you can send that feeling whenever they are in the world.
+            Remember feeling love and warmth when you receive postcards from your friends or family abroad? Well now you can send that feeling digitally below.
           </p>
         </div>
-        {/* Full Width Image */}
-        <div className="w-full">
-          <Image
-            src="/images/illustration/hero-img.png"
-            alt="Hero Image"
-            width={1920}
-            height={1080}
-            className="w-full h-auto"
-            priority
-          />
+        {/* Desktop Background Image */}
+        <div className="hidden md:block w-full">
+          <div className="relative bg-[url('/images/illustration/hero-img.png')] bg-cover bg-center bg-no-repeat py-16">
+            <div className="container-custom">
+              <div className="w-full max-w-[879px] mx-auto">
+                <div className="rounded-[48px] bg-[#F4E7CF]/95 backdrop-blur-sm p-8 md:p-12 shadow-xl">
+                  <PostcardCustomizer />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Mobile Postcard Customizer */}
+        <div className="md:hidden container-custom mt-8">
+          <div className="w-full max-w-[879px] mx-auto">
+            <div className="rounded-[48px] bg-[#F4E7CF]/95 backdrop-blur-sm p-8 shadow-xl">
+              <PostcardCustomizer />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -88,7 +105,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Craft Section */}
+      {/* Craft Section
       <section className="section-spacing bg-[#FFF5E3]">
         <div className="container-custom">
           <div className="text-center mb-6">
@@ -99,16 +116,9 @@ export default function Home() {
               No sign ups and logins. You just dive straight right in to making your postcard
             </p>
           </div>
-          <div className="hidden md:block rounded-[48px] bg-[#F4E7CF] p-8 md:p-12">
-            <div className="max-w-[879px] mx-auto">
-              <PostcardCustomizer />
-            </div>
-          </div>
-          <div className="md:hidden">
-            <PostcardCustomizer />
-          </div>
+
         </div>
-      </section>
+      </section> */}
 
       {/* Feedback Section */}
       <section className="section-spacing">

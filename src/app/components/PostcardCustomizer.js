@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Toolbar from './Toolbar';
 import { Upload, Eye } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 // Add this function to compress the image
 const compressImage = (base64String) => {
@@ -391,202 +392,104 @@ export default function PostcardCustomizer() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center">
-
-      <div className="relative w-full max-w-[879.04px]">
-        {/* Mobile Sections */}
-        {isMobile && (
-          <div className="flex flex-col gap-8">
-            {/* Section 1: Upload and Draw */}
-            <div>
-              <h2 className="text-xl text-slate-900 mb-4" style={{ fontFamily: 'PP Editorial New', fontStyle: 'italic' }}>
-                1. Upload and draw
-              </h2>
-              <div className="relative w-full">
-                <div className="w-full aspect-[879/591] bg-white shadow-md relative overflow-hidden">
-                  <img
-                    src={uploadedImage}
-                    alt="Postcard Front"
-                    className="w-full h-full object-cover p-4 box-border pointer-events-none"
-                  />
-                  <canvas
-                    ref={frontCanvasRef}
-                    className="absolute inset-0 w-full h-full touch-none"
-                    style={{
-                      width: '100%',
-                      height: '100%'
-                    }}
-                    onTouchStart={startDrawing}
-                    onTouchMove={draw}
-                    onTouchEnd={stopDrawing}
-                    onTouchCancel={stopDrawing}
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
-                  />
-                </div>
-
-                {/* Mobile Upload Section */}
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="w-full mt-4 text-sm text-transparent
-                      file:mr-4 file:py-2 file:px-4 
-                      file:rounded-lg file:border-0 
-                      file:text-white file:bg-[#2F2F2F] 
-                      file:hover:bg-black file:transition-all
-                      file:cursor-pointer file:text-sm
-                      file:flex file:items-center file:justify-center
-                      file:w-full file:h-full
-                      cursor-pointer"
-                    style={{
-                      color: 'transparent',
-                    }}
-                  />
-                  {/* <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center gap-2 mt-2">
-                    <Upload size={20} className="text-white" />
-                    <span className="text-white">Upload Photo</span>
-                  </div> */}
-                </div>
-
-                {/* Front Toolbar */}
-                <div className="mt-4 relative z-10">
-                  <Toolbar
-                    currentSide="front"
-                    selectedTool={selectedTool}
-                    drawingColor={drawingColor}
-                    textColor={textColor}
-                    selectedFont={selectedFont}
-                    fontOptions={fontOptions}
-                    onToolSelect={setSelectedTool}
-                    onColorChange={setDrawingColor}
-                    onTextColorChange={setTextColor}
-                    onFontChange={setSelectedFont}
-                    onClear={clearCanvas}
-                    isMobile={isMobile}
-                    hideUpload={true}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Section 2: Write Message */}
-            <div>
-              <h2 className="text-xl text-slate-900 mb-4" style={{ fontFamily: 'PP Editorial New', fontStyle: 'italic' }}>
-                2. Write your message
-              </h2>
-              <div className="relative w-full">
-                <div className="w-full aspect-[879/591] bg-white shadow-md relative overflow-hidden">
-                  <canvas
-                    ref={staticCanvasRef}
-                    className="absolute inset-0 w-full h-full"
-                    style={{
-                      width: '100%',
-                      height: '100%'
-                    }}
-                  />
-                  <div className="absolute inset-0 p-4 md:p-8">
-                    <textarea
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Write your message here..."
-                      className="w-1/2 h-full resize-none bg-transparent focus:outline-none"
-                      style={{
-                        fontFamily: selectedFont,
-                        color: textColor,
-                        fontSize: isMobile ? '16px' : '24px',
-                        lineHeight: '1.5',
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Back Toolbar */}
-                <div className="mt-4 relative z-10">
-                  <Toolbar
-                    currentSide="back"
-                    selectedTool={selectedTool}
-                    drawingColor={drawingColor}
-                    textColor={textColor}
-                    selectedFont={selectedFont}
-                    fontOptions={fontOptions}
-                    onToolSelect={setSelectedTool}
-                    onColorChange={setDrawingColor}
-                    onTextColorChange={setTextColor}
-                    onFontChange={setSelectedFont}
-                    isMobile={isMobile}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Preview Button */}
-            <button
-              onClick={() => {
-                generatePreview();
-                setShowPreview(true);
-              }}
-              className="w-full px-4 py-2 bg-[#2F2F2F] text-white rounded-lg hover:bg-black transition-all flex items-center justify-center gap-2 relative z-10"
-            >
-              <Eye size={20} />
-              Preview Postcard
-            </button>
-          </div>
-        )}
-
-        {/* Desktop View */}
-        {!isMobile && (
-          <div className="relative">
-            <div className="w-full mb-4">
-              <div className="relative w-full aspect-[879/591] perspective">
-                <div
-                  className="absolute inset-0 w-full h-full transition-transform duration-700 transform-style-preserve-3d"
-                  style={{
-                    transform: currentSide === 'back' ? 'rotateY(180deg)' : ''
-                  }}
-                >
-                  {/* Front Side */}
-                  <div className="absolute w-full h-full backface-hidden bg-white shadow-md flex items-center justify-center touch-none">
-                    <canvas
-                      ref={frontCanvasRef}
-                      width={879}
-                      height={591}
-                      className="absolute inset-0 touch-none"
-                      onMouseDown={startDrawing}
-                      onMouseMove={draw}
-                      onMouseUp={stopDrawing}
-                      onMouseLeave={stopDrawing}
-                      onTouchStart={startDrawing}
-                      onTouchMove={draw}
-                      onTouchEnd={stopDrawing}
-                      onTouchCancel={stopDrawing}
-                    ></canvas>
+    <>
+      <div className="flex flex-col items-center justify-center">
+        <div className="relative w-full max-w-[879.04px]">
+          {/* Mobile Sections */}
+          {isMobile && (
+            <div className="flex flex-col gap-8">
+              {/* Section 1: Upload and Draw */}
+              <div>
+                <h2 className="text-xl text-slate-900 mb-4" style={{ fontFamily: 'PP Editorial New', fontStyle: 'italic' }}>
+                  1. Upload and draw
+                </h2>
+                <div className="relative w-full">
+                  <div className="w-full aspect-[879/591] bg-white shadow-md relative overflow-hidden">
                     <img
                       src={uploadedImage}
                       alt="Postcard Front"
                       className="w-full h-full object-cover p-4 box-border pointer-events-none"
                     />
-                    <input
-                      id="imageUpload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageUpload}
+                    <canvas
+                      ref={frontCanvasRef}
+                      className="absolute inset-0 w-full h-full touch-none"
+                      style={{
+                        width: '100%',
+                        height: '100%'
+                      }}
+                      onTouchStart={startDrawing}
+                      onTouchMove={draw}
+                      onTouchEnd={stopDrawing}
+                      onTouchCancel={stopDrawing}
+                      onMouseDown={startDrawing}
+                      onMouseMove={draw}
+                      onMouseUp={stopDrawing}
+                      onMouseLeave={stopDrawing}
                     />
                   </div>
 
-                  {/* Back Side */}
-                  <div className="absolute w-full h-full backface-hidden bg-white shadow-md rotate-y-180">
+                  {/* Mobile Upload Section */}
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="w-full mt-4 text-sm text-transparent
+                        file:mr-4 file:py-2 file:px-4 
+                        file:rounded-lg file:border-0 
+                        file:text-white file:bg-[#2F2F2F] 
+                        file:hover:bg-black file:transition-all
+                        file:cursor-pointer file:text-sm
+                        file:flex file:items-center file:justify-center
+                        file:w-full file:h-full
+                        cursor-pointer"
+                      style={{
+                        color: 'transparent',
+                      }}
+                    />
+                    {/* <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center gap-2 mt-2">
+                      <Upload size={20} className="text-white" />
+                      <span className="text-white">Upload Photo</span>
+                    </div> */}
+                  </div>
+
+                  {/* Front Toolbar */}
+                  <div className="mt-4 relative z-10">
+                    <Toolbar
+                      currentSide="front"
+                      selectedTool={selectedTool}
+                      drawingColor={drawingColor}
+                      textColor={textColor}
+                      selectedFont={selectedFont}
+                      fontOptions={fontOptions}
+                      onToolSelect={setSelectedTool}
+                      onColorChange={setDrawingColor}
+                      onTextColorChange={setTextColor}
+                      onFontChange={setSelectedFont}
+                      onClear={clearCanvas}
+                      isMobile={isMobile}
+                      hideUpload={true}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: Write Message */}
+              <div>
+                <h2 className="text-xl text-slate-900 mb-4" style={{ fontFamily: 'PP Editorial New', fontStyle: 'italic' }}>
+                  2. Write your message
+                </h2>
+                <div className="relative w-full">
+                  <div className="w-full aspect-[879/591] bg-white shadow-md relative overflow-hidden">
                     <canvas
                       ref={staticCanvasRef}
-                      width={879}
-                      height={591}
-                      className="absolute inset-0"
-                    ></canvas>
-                    <div className="absolute inset-0 p-8">
+                      className="absolute inset-0 w-full h-full"
+                      style={{
+                        width: '100%',
+                        height: '100%'
+                      }}
+                    />
+                    <div className="absolute inset-0 p-4 md:p-8">
                       <textarea
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
@@ -595,51 +498,150 @@ export default function PostcardCustomizer() {
                         style={{
                           fontFamily: selectedFont,
                           color: textColor,
-                          fontSize: '24px',
+                          fontSize: isMobile ? '16px' : '24px',
                           lineHeight: '1.5',
                         }}
                       />
                     </div>
                   </div>
+
+                  {/* Back Toolbar */}
+                  <div className="mt-4 relative z-10">
+                    <Toolbar
+                      currentSide="back"
+                      selectedTool={selectedTool}
+                      drawingColor={drawingColor}
+                      textColor={textColor}
+                      selectedFont={selectedFont}
+                      fontOptions={fontOptions}
+                      onToolSelect={setSelectedTool}
+                      onColorChange={setDrawingColor}
+                      onTextColorChange={setTextColor}
+                      onFontChange={setSelectedFont}
+                      isMobile={isMobile}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-            {/* Desktop Toolbar */}
-            <div className='w-full'>
-              <Toolbar
-                currentSide={currentSide}
-                selectedTool={selectedTool}
-                drawingColor={drawingColor}
-                textColor={textColor}
-                selectedFont={selectedFont}
-                fontOptions={fontOptions}
-                onToolSelect={setSelectedTool}
-                onColorChange={setDrawingColor}
-                onTextColorChange={setTextColor}
-                onFontChange={setSelectedFont}
-                onClear={clearCanvas}
-                onUpload={() => document.getElementById('imageUpload').click()}
-                onDownload={() => {
-                  if (showPreview) {
-                    const link = document.createElement('a');
-                    link.href = showPreview;
-                    link.download = 'my-postcard.png';
-                    link.click();
-                  } else {
-                    generatePreview();
-                  }
+
+              {/* Preview Button */}
+              <button
+                onClick={() => {
+                  generatePreview();
+                  setShowPreview(true);
                 }}
-                onFlip={handleFlip}
-                isMobile={isMobile}
-              />
+                className="w-full px-4 py-2 bg-[#2F2F2F] text-white rounded-lg hover:bg-black transition-all flex items-center justify-center gap-2 relative z-10"
+              >
+                <Eye size={20} />
+                Preview Postcard
+              </button>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Desktop View */}
+          {!isMobile && (
+            <div className="relative">
+              <div className="w-full mb-4">
+                <div className="relative w-full aspect-[879/591] perspective">
+                  <div
+                    className="absolute inset-0 w-full h-full transition-transform duration-700 transform-style-preserve-3d"
+                    style={{
+                      transform: currentSide === 'back' ? 'rotateY(180deg)' : ''
+                    }}
+                  >
+                    {/* Front Side */}
+                    <div className="absolute w-full h-full backface-hidden bg-white shadow-md flex items-center justify-center touch-none">
+                      <canvas
+                        ref={frontCanvasRef}
+                        width={879}
+                        height={591}
+                        className="absolute inset-0 touch-none"
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchMove={draw}
+                        onTouchEnd={stopDrawing}
+                        onTouchCancel={stopDrawing}
+                      ></canvas>
+                      <img
+                        src={uploadedImage}
+                        alt="Postcard Front"
+                        className="w-full h-full object-cover p-4 box-border pointer-events-none"
+                      />
+                      <input
+                        id="imageUpload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                      />
+                    </div>
+
+                    {/* Back Side */}
+                    <div className="absolute w-full h-full backface-hidden bg-white shadow-md rotate-y-180">
+                      <canvas
+                        ref={staticCanvasRef}
+                        width={879}
+                        height={591}
+                        className="absolute inset-0"
+                      ></canvas>
+                      <div className="absolute inset-0 p-8">
+                        <textarea
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
+                          placeholder="Write your message here..."
+                          className="w-1/2 h-full resize-none bg-transparent focus:outline-none"
+                          style={{
+                            fontFamily: selectedFont,
+                            color: textColor,
+                            fontSize: '24px',
+                            lineHeight: '1.5',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Desktop Toolbar */}
+              <div className='w-full'>
+                <Toolbar
+                  currentSide={currentSide}
+                  selectedTool={selectedTool}
+                  drawingColor={drawingColor}
+                  textColor={textColor}
+                  selectedFont={selectedFont}
+                  fontOptions={fontOptions}
+                  onToolSelect={setSelectedTool}
+                  onColorChange={setDrawingColor}
+                  onTextColorChange={setTextColor}
+                  onFontChange={setSelectedFont}
+                  onClear={clearCanvas}
+                  onUpload={() => document.getElementById('imageUpload').click()}
+                  onDownload={() => {
+                    if (showPreview) {
+                      const link = document.createElement('a');
+                      link.href = showPreview;
+                      link.download = 'my-postcard.png';
+                      link.click();
+                    } else {
+                      generatePreview();
+                    }
+                  }}
+                  onFlip={handleFlip}
+                  isMobile={isMobile}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Preview Modal */}
-      {showPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+      {showPreview && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50">
           <div className="w-[calc(100%-32px)] md:w-[70%] h-[80%] bg-white rounded-lg flex flex-col overflow-hidden">
             {/* Header */}
             <div className="p-4 flex-shrink-0 border-b">
@@ -689,8 +691,9 @@ export default function PostcardCustomizer() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
