@@ -129,7 +129,7 @@ export default function Home() {
                 Wanted to<br />provide feedback?
               </h2>
               <p className="body-large text-[#252525] mb-8">
-                This is the first version of Postcards and I understand it might be lacking a lot of things. If you have feedback towards it. Please don't hesitate to send me an email or message me on these social media platforms.
+                Thanks a lot for trying out my initial version of postcard builder. If you love this, please share it with your friends and family! <br /><br />Additionally, if you have any forms of feedback or feature request, please don't hesitate to send me an email or message me on these social media platforms.
               </p>
               <div className="flex gap-4">
                 <a href="https://instagram.com/csleong98" target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-slate-900">
