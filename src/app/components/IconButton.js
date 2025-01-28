@@ -15,8 +15,8 @@ const IconButton = ({
   const stateStyles = isDisabled
     ? "opacity-50 cursor-not-allowed bg-gray-50"
     : isActive
-      ? "bg-gray-100"
-      : "hover:bg-gray-50";
+      ? "bg-[#2F2F2F] text-white"
+      : "hover:bg-gray-100";
 
   const handleColorClick = () => {
     if (colorInputRef.current) {

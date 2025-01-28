@@ -151,16 +151,23 @@ export default function Toolbar({
         {!isMobile && (
           <>
             <Separator />
-            <IconButton
-              icon={<Download size={20} />}
+            <button
               onClick={onDownload}
               tooltip="Download"
-            />
-            <IconButton
-              icon={<RotateCw size={20} />}
+              className="w-full px-4 py-2 text-[#2F2F2F] rounded-lg bg-transparent hover:bg-gray-100 hover:#2F2F2F transition-all flex items-center justify-center gap-2 relative z-10"
+            >
+              <Download size={20} />
+              Download
+            </button>
+
+            <button
               onClick={onFlip}
               tooltip="Flip"
-            />
+              className="w-full px-4 py-2 text-[#2F2F2F] rounded-lg bg-transparent hover:bg-gray-100 hover:#2F2F2F transition-all flex items-center justify-center gap-2 relative z-10"
+            >
+              <RotateCw size={20} />
+              Flip
+            </button>
           </>
         )}
       </div>
