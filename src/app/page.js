@@ -11,11 +11,13 @@ export default function Home() {
       <section className="section-spacing">
         {/* Mobile Hero Image */}
         <div className="md:hidden w-full mb-16">
-          <img 
-            src="/images/illustration/hero-img.png" 
-            alt="Hero" 
-            className="w-full h-[400px] object-cover"
-          />
+          <div className="w-full" style={{ aspectRatio: '879/591' }}>
+            <img 
+              src="/images/illustration/hero-img.png" 
+              alt="Hero" 
+              className="w-full h-full object-cover"
+            />
+          </div>
         </div>
         {/* Text Container */}
         <div className="container-custom flex flex-col items-center justify-center text-center mb-4">
@@ -28,7 +30,10 @@ export default function Home() {
         </div>
         {/* Desktop Background Image */}
         <div className="hidden md:block w-full">
-          <div className="relative bg-[url('/images/illustration/hero-img.png')] bg-cover bg-center bg-no-repeat py-16">
+          <div 
+            className="relative bg-[url('/images/illustration/hero-img.png')] bg-cover bg-center bg-no-repeat py-16" 
+            style={{ aspectRatio: '879/591' }}
+          >
             <div className="container-custom">
               <div className="w-full max-w-[879px] mx-auto">
                 <div className="rounded-[48px] bg-[#F4E7CF]/95 backdrop-blur-sm p-8 md:p-12 shadow-xl">
