@@ -3,9 +3,11 @@
 import Image from "next/image";
 import PostcardCustomizer from "./components/PostcardCustomizer";
 import { InstagramLogo, LinkedinLogo, TwitterLogo, EnvelopeSimple } from "@phosphor-icons/react";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export default function Home() {
   return (
+    <SpeedInsights>
     <main className="min-h-screen">
       {/* Hero Section */}
       <section className="section-spacing">
@@ -169,5 +171,6 @@ export default function Home() {
         Created with ❤️ by Chee Seng Leong • 2025
       </footer>
     </main>
+    </SpeedInsights>
   );
 }
