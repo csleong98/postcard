@@ -3,7 +3,6 @@
 import Image from "next/image";
 import PostcardCustomizer from "./components/PostcardCustomizer";
 import { InstagramLogo, LinkedinLogo, TwitterLogo, EnvelopeSimple } from "@phosphor-icons/react";
-import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export default function Home() {
   return (
@@ -111,21 +110,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Craft Section
-      <section className="section-spacing bg-[#FFF5E3]">
-        <div className="container-custom">
-          <div className="text-center mb-6">
-            <h2 className="h2 mb-4 text-slate-900">
-              Craft your postcard here
-            </h2>
-            <p className="body-large text-[#252525]">
-              No sign ups and logins. You just dive straight right in to making your postcard
-            </p>
-          </div>
-
-        </div>
-      </section> */}
-
       {/* Feedback Section */}
       <section className="section-spacing">
         <div className="container-custom">
@@ -169,7 +153,6 @@ export default function Home() {
       <footer className="py-8 text-center body-medium text-[#252525]">
         Created with ❤️ by Chee Seng Leong • 2025
       </footer>
-      <SpeedInsights />
     </main>
   );
 }
