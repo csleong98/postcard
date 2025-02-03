@@ -7,7 +7,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export default function Home() {
   return (
-    <SpeedInsights>
     <main className="min-h-screen">
       {/* Hero Section */}
       <section className="section-spacing">
@@ -170,7 +169,7 @@ export default function Home() {
       <footer className="py-8 text-center body-medium text-[#252525]">
         Created with ❤️ by Chee Seng Leong • 2025
       </footer>
+      <SpeedInsights />
     </main>
-    </SpeedInsights>
   );
 }
