@@ -29,7 +29,7 @@ const createStickerStyle = (isDragging = false) => ({
   `
 })
 
-export function StickersTab({ canvasRef, initialStickers = [], onStickersChange }) {
+export function StickersTab({ canvasRef, initialStickers = [], onStickersChange, stickerIdPrefix = 'sticker' }) {
   const [pasteMode, setPasteMode] = useState(null)
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 })
   const [stickers, setStickers] = useState(initialStickers)
@@ -181,6 +181,7 @@ export function StickersTab({ canvasRef, initialStickers = [], onStickersChange 
           <div
             key={sticker.id}
             className="absolute select-none cursor-move"
+            data-sticker={`${stickerIdPrefix}-${sticker.id}`}
             style={{
               left: `${sticker.position.x}px`,
               top: `${sticker.position.y}px`,

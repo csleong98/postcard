@@ -8,6 +8,7 @@ import { Tabs } from './components/common/Tabs'
 import { Stepper } from './components/common/Stepper'
 import { StickersTab } from './components/stickers'
 import RangeSlider from './components/RangeSlider'
+import html2canvas from 'html2canvas'
 
 const tabs = [
   { id: 'picture', label: 'Picture' },
@@ -123,6 +124,9 @@ export default function TestPage() {
   const [textColor, setTextColor] = useState('#000000')
   const [fontSize, setFontSize] = useState(24) // Default font size
   const [recipientAddress, setRecipientAddress] = useState('') // Add recipient address state
+  const [downloadFormat, setDownloadFormat] = useState('separate') // Add download format state
+  const [isDownloading, setIsDownloading] = useState(false) // Add loading state for download
+  const [downloadStatus, setDownloadStatus] = useState(null) // Add download status for notifications
   
   // Add state for stickers
   const [frontStickers, setFrontStickers] = useState([])
@@ -140,7 +144,8 @@ export default function TestPage() {
   } = StickersTab({ 
     canvasRef: frontCanvasRef,
     initialStickers: frontStickers,
-    onStickersChange: setFrontStickers
+    onStickersChange: setFrontStickers,
+    stickerIdPrefix: 'front-sticker'
   })
 
   // Initialize back stickers functionality
@@ -155,7 +160,8 @@ export default function TestPage() {
   } = StickersTab({ 
     canvasRef: backCanvasRef,
     initialStickers: backStickers,
-    onStickersChange: setBackStickers
+    onStickersChange: setBackStickers,
+    stickerIdPrefix: 'back-sticker'
   })
 
   const handleStepChange = (stepId) => {
@@ -229,7 +235,7 @@ export default function TestPage() {
   // Add this useEffect for the static elements (stamp box and divider)
   useEffect(() => {
     const canvas = staticCanvasRef.current;
-    if (canvas && currentStep === 2) {
+    if (canvas && (currentStep === 2 || currentStep === 3)) {
       const ctx = canvas.getContext('2d');
       
       // Set canvas dimensions
@@ -512,6 +518,249 @@ export default function TestPage() {
     return () => clearTimeout(timeoutId);
   }, [message]);
 
+  // Function to handle postcard download
+  const handleDownloadPostcard = () => {
+    setIsDownloading(true); // Set loading state to true
+    setDownloadStatus(null); // Reset download status
+    
+    const downloadPostcardImages = async () => {
+      try {
+        // Debug function to visualize canvas
+        const debugCanvas = (canvas, name) => {
+          // Create a debug container
+          const debugContainer = document.createElement('div');
+          debugContainer.style.position = 'fixed';
+          debugContainer.style.top = '20px';
+          debugContainer.style.right = '20px';
+          debugContainer.style.zIndex = '9999';
+          debugContainer.style.background = 'white';
+          debugContainer.style.padding = '10px';
+          debugContainer.style.border = '2px solid black';
+          debugContainer.style.borderRadius = '5px';
+          debugContainer.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
+          
+          // Add title
+          const title = document.createElement('div');
+          title.textContent = `Debug: ${name}`;
+          title.style.marginBottom = '5px';
+          title.style.fontWeight = 'bold';
+          debugContainer.appendChild(title);
+          
+          // Add canvas
+          const scaledCanvas = document.createElement('canvas');
+          scaledCanvas.width = canvas.width / 4;
+          scaledCanvas.height = canvas.height / 4;
+          const ctx = scaledCanvas.getContext('2d');
+          ctx.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+          debugContainer.appendChild(scaledCanvas);
+          
+          // Add close button
+          const closeButton = document.createElement('button');
+          closeButton.textContent = 'Close';
+          closeButton.style.marginTop = '5px';
+          closeButton.style.padding = '5px 10px';
+          closeButton.onclick = () => document.body.removeChild(debugContainer);
+          debugContainer.appendChild(closeButton);
+          
+          document.body.appendChild(debugContainer);
+        };
+
+        // Hide the labels before capturing
+        const labels = document.querySelectorAll('.download-hide-label');
+        labels.forEach(label => {
+          label.style.display = 'none';
+        });
+        
+        // Get front side container
+        const frontContainer = document.querySelector('.preview-front-container');
+        
+        // Get back side container
+        const backContainer = document.querySelector('.preview-back-container');
+        
+        if (!frontContainer || !backContainer) {
+          throw new Error('Could not find postcard containers');
+        }
+        
+        console.log('Capturing front container:', frontContainer);
+        
+        // Use html2canvas for the front with improved settings
+        const frontCanvas = await html2canvas(frontContainer, {
+          scale: 3, // Higher resolution for better quality
+          useCORS: true, // Allow cross-origin images
+          allowTaint: true,
+          backgroundColor: 'white',
+          imageTimeout: 0, // No timeout for images
+          logging: false, // Disable logging
+          letterRendering: true, // Better text rendering
+          foreignObjectRendering: false, // More consistent rendering
+          onclone: (clonedDoc) => {
+            // Make sure stickers are visible in the cloned document
+            const clonedFrontContainer = clonedDoc.querySelector('.preview-front-container');
+            if (clonedFrontContainer) {
+              // Ensure image is loaded properly
+              const img = clonedFrontContainer.querySelector('img');
+              if (img) {
+                img.crossOrigin = 'anonymous';
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+              }
+              
+              // Make stickers visible
+              const stickers = clonedFrontContainer.querySelectorAll('[data-sticker]');
+              stickers.forEach(sticker => {
+                sticker.style.visibility = 'visible';
+                sticker.style.opacity = '1';
+              });
+            }
+          }
+        });
+        
+        // Debug the captured front canvas
+        debugCanvas(frontCanvas, 'Front Canvas');
+        
+        // Use html2canvas for the back with improved settings
+        const backCanvas = await html2canvas(backContainer, {
+          scale: 3, // Higher resolution for better quality
+          useCORS: true, // Allow cross-origin images
+          allowTaint: true,
+          backgroundColor: 'white',
+          imageTimeout: 0, // No timeout for images
+          logging: false, // Disable logging
+          letterRendering: true, // Better text rendering
+          foreignObjectRendering: false, // More consistent rendering
+          onclone: (clonedDoc) => {
+            // Make sure stickers are visible in the cloned document
+            const clonedBackContainer = clonedDoc.querySelector('.preview-back-container');
+            if (clonedBackContainer) {
+              // Make stickers visible
+              const stickers = clonedBackContainer.querySelectorAll('[data-sticker]');
+              stickers.forEach(sticker => {
+                sticker.style.visibility = 'visible';
+                sticker.style.opacity = '1';
+              });
+            }
+          }
+        });
+        
+        // Debug the captured back canvas
+        debugCanvas(backCanvas, 'Back Canvas');
+        
+        // Show the labels again after capturing
+        labels.forEach(label => {
+          label.style.display = 'block';
+        });
+        
+        if (downloadFormat === 'a4') {
+          // Create A4 canvas (A4 dimensions in pixels at 300 DPI for better print quality: 2480 x 3508)
+          const a4Canvas = document.createElement('canvas');
+          a4Canvas.width = 2480;
+          a4Canvas.height = 3508;
+          const a4Ctx = a4Canvas.getContext('2d');
+          
+          // Fill with white background
+          a4Ctx.fillStyle = 'white';
+          a4Ctx.fillRect(0, 0, a4Canvas.width, a4Canvas.height);
+          
+          // Calculate scaled dimensions to fit on A4 while maintaining aspect ratio
+          const scale = Math.min(
+            (a4Canvas.width - 200) / frontCanvas.width,
+            (a4Canvas.height / 2 - 300) / frontCanvas.height
+          );
+          
+          const scaledWidth = Math.floor(frontCanvas.width * scale);
+          const scaledHeight = Math.floor(frontCanvas.height * scale);
+          
+          // Draw front side at the top with proper scaling
+          a4Ctx.drawImage(
+            frontCanvas, 
+            Math.floor((a4Canvas.width - scaledWidth) / 2), 
+            100, 
+            scaledWidth, 
+            scaledHeight
+          );
+          
+          // Draw back side at the bottom with proper scaling
+          a4Ctx.drawImage(
+            backCanvas, 
+            Math.floor((a4Canvas.width - scaledWidth) / 2), 
+            scaledHeight + 200, 
+            scaledWidth, 
+            scaledHeight
+          );
+          
+          // Add cutting guidelines
+          a4Ctx.strokeStyle = '#aaaaaa';
+          a4Ctx.setLineDash([15, 15]);
+          a4Ctx.lineWidth = 2;
+          
+          // Draw cutting lines around front
+          a4Ctx.strokeRect(
+            Math.floor((a4Canvas.width - scaledWidth) / 2) - 15, 
+            100 - 15, 
+            scaledWidth + 30, 
+            scaledHeight + 30
+          );
+          
+          // Draw cutting lines around back
+          a4Ctx.strokeRect(
+            Math.floor((a4Canvas.width - scaledWidth) / 2) - 15, 
+            scaledHeight + 200 - 15, 
+            scaledWidth + 30, 
+            scaledHeight + 30
+          );
+          
+          // Create download link for A4
+          const a4ImageURL = a4Canvas.toDataURL('image/png');
+          const a4Link = document.createElement('a');
+          a4Link.href = a4ImageURL;
+          a4Link.download = 'postcard-a4-print.png';
+          a4Link.click();
+          
+          setIsDownloading(false); // Reset loading state
+          setDownloadStatus({
+            type: 'success',
+            message: 'Your postcard has been downloaded as an A4 print layout.'
+          });
+          
+        } else {
+          // Create download links for separate images
+          const frontImageURL = frontCanvas.toDataURL('image/png');
+          const backImageURL = backCanvas.toDataURL('image/png');
+          
+          // Create download links
+          const frontLink = document.createElement('a');
+          frontLink.href = frontImageURL;
+          frontLink.download = 'postcard-front.png';
+          
+          const backLink = document.createElement('a');
+          backLink.href = backImageURL;
+          backLink.download = 'postcard-back.png';
+          
+          // Trigger downloads
+          frontLink.click();
+          setTimeout(() => {
+            backLink.click();
+            setIsDownloading(false); // Reset loading state
+            setDownloadStatus({
+              type: 'success',
+              message: 'Your postcard front and back have been downloaded as separate images.'
+            });
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Error downloading postcard:', error);
+        setIsDownloading(false);
+        setDownloadStatus({
+          type: 'error',
+          message: 'There was an error downloading your postcard. Please try again.'
+        });
+      }
+    };
+    
+    downloadPostcardImages();
+  };
+
   // Front side tabs content
   const getTabContent = () => {
     switch (activeTab) {
@@ -551,12 +800,12 @@ export default function TestPage() {
             <div className="mt-4 grid grid-cols-2 gap-4">
               {fontOptions.map((font) => (
                 <button
-                  key={font}
-                  className={`p-3 text-center border rounded ${selectedFont === font ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'}`}
-                  style={{ fontFamily: font }}
-                  onClick={() => setSelectedFont(font)}
+                  key={font.value}
+                  className={`p-3 text-center border rounded ${selectedFont === font.value ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'}`}
+                  style={{ fontFamily: font.value }}
+                  onClick={() => setSelectedFont(font.value)}
                 >
-                  {font}
+                  {font.name}
                 </button>
               ))}
             </div>
@@ -584,14 +833,11 @@ export default function TestPage() {
                   setMessage(e.target.value);
                 }
               }}
-              className="w-full h-40 p-3 border rounded resize-none"
               placeholder="Write your message here..."
-              style={{
-                fontSize: `${fontSize * 0.67}px`,
-                lineHeight: '1.5',
-                fontFamily: selectedFont
-              }}
-              maxLength={600}
+              className={`w-full h-48 p-4 rounded-lg border ${
+                textOverflow ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-gray-200 focus:border-black focus:ring-1 focus:ring-black'
+              }`}
+              maxLength={600} // Fixed character limit
             ></textarea>
             <div className={`text-sm mt-2 ${message.length >= 550 ? 'text-red-500' : 'text-gray-500'}`}>
               {message.length} / 600 characters
@@ -632,160 +878,280 @@ export default function TestPage() {
       />
       
       <div className="grid grid-cols-12 gap-4 p-8">
-        {/* Left Panel - Only show in step 1 and 2 */}
-        {currentStep < 3 && (
-          <div className="col-span-12 lg:col-span-3 xl:col-span-4">
-            <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-black/5 mb-6">
-              <span>←</span>
-              <span>Back</span>
-            </Link>
+        {/* Left Panel - Show in all steps now */}
+        <div className="col-span-12 lg:col-span-3 xl:col-span-4">
+          <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-black/5 mb-6">
+            <span>←</span>
+            <span>Back</span>
+          </Link>
 
-            <h1 className="h3 mb-4">
-              {currentStep === 1 ? 'Design the front' : 'Write your message'}
-            </h1>
+          <h1 className="h3 mb-4">
+            {currentStep === 1 ? 'Design the front' : 
+             currentStep === 2 ? 'Write your message' : 
+             'Preview & Download'}
+          </h1>
 
-            {currentStep === 1 && (
-              <>
-                <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
+          {currentStep === 1 && (
+            <>
+              <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
 
-                {/* Picture Selection */}
-                {activeTab === 'picture' && (
-                  <div>
-                    <div className="flex justify-between items-center mb-4">
-                      <h2>Select a picture</h2>
-                      <div className="relative">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          title=""
-                        />
-                        <button className="text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 flex items-center gap-2">
-                          <Upload size={16} />
-                          <span>{uploadedImage ? 'Reupload photo' : 'Upload photo'}</span>
-                        </button>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {sampleImages.map((image) => (
-                        <button
-                          key={image.id}
-                          className={`aspect-[4/3] rounded-lg border-2 overflow-hidden ${
-                            selectedImage?.src === image.src 
-                              ? 'border-blue-500' 
-                              : 'border-gray-200'
-                          }`}
-                          onClick={() => setSelectedImage(image)}
-                        >
-                          <div className="relative w-full h-full">
-                            <Image
-                              src={image.src}
-                              alt={image.alt}
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 200px) 100vw, 200px"
-                            />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Stickers Selection */}
-                {activeTab === 'stickers' && frontStickerPickerUI}
-              </>
-            )}
-
-            {currentStep === 2 && (
-              <div>
-                <Tabs tabs={backTabs} activeTab={activeBackTab} onTabChange={handleBackTabChange} />
-                
-                {activeBackTab === 'message' && (
-                  <>
-                    <RangeSlider 
-                      value={fontSize}
-                      onChange={setFontSize}
-                      min={16}
-                      max={36}
-                      step={2}
-                      label="Font Size"
-                      unit="px"
-                    />
-                    <div className="mb-4">
-                      <select
-                        value={selectedFont}
-                        onChange={(e) => setSelectedFont(e.target.value)}
-                        className="w-full p-2 rounded-lg border border-gray-200 focus:border-black focus:ring-1 focus:ring-black"
-                      >
-                        {fontOptions.map(font => (
-                          <option key={font.value} value={font.value}>
-                            {font.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+              {/* Picture Selection */}
+              {activeTab === 'picture' && (
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h2>Select a picture</h2>
                     <div className="relative">
-                      <textarea 
-                        value={message}
-                        onChange={(e) => {
-                          // Only update if we're under the character limit
-                          if (e.target.value.length <= 600) {
-                            setMessage(e.target.value);
-                          }
-                        }}
-                        placeholder="Write your message here..."
-                        className={`w-full h-48 p-4 rounded-lg border ${
-                          textOverflow ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-gray-200 focus:border-black focus:ring-1 focus:ring-black'
-                        } font-sans`}
-                        style={{
-                          fontSize: '16px', // Fixed default font size
-                          lineHeight: '1.5',
-                          fontFamily: 'inherit' // Use default font family
-                        }}
-                        maxLength={600} // Fixed character limit
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        title=""
                       />
-                      <div className="mt-2 flex justify-between text-sm">
-                        <div className={message.length >= 600 ? 'text-red-500' : 'text-gray-500'}>
-                          {message.length} / 600 characters
-                        </div>
-                        {message.length >= 600 && (
-                          <div className="text-red-500">
-                            Character limit reached
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
-                
-                {activeBackTab === 'stamp' && (
-                  <div className="mt-4">
-                    <h3 className="text-lg font-medium mb-3">Choose a Stamp</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Placeholder for stamp options */}
-                      <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
-                        <div className="text-gray-400">Stamp 1</div>
-                      </button>
-                      <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
-                        <div className="text-gray-400">Stamp 2</div>
-                      </button>
-                      <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
-                        <div className="text-gray-400">Stamp 3</div>
-                      </button>
-                      <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
-                        <div className="text-gray-400">Stamp 4</div>
+                      <button className="text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 flex items-center gap-2">
+                        <Upload size={16} />
+                        <span>{uploadedImage ? 'Reupload photo' : 'Upload photo'}</span>
                       </button>
                     </div>
                   </div>
-                )}
-                
-                {activeBackTab === 'stickers' && backStickerPickerUI}
-              </div>
-            )}
+                  <div className="grid grid-cols-3 gap-2">
+                    {sampleImages.map((image) => (
+                      <button
+                        key={image.id}
+                        className={`aspect-[4/3] rounded-lg border-2 overflow-hidden ${
+                          selectedImage?.src === image.src 
+                            ? 'border-blue-500' 
+                            : 'border-gray-200'
+                        }`}
+                        onClick={() => setSelectedImage(image)}
+                      >
+                        <div className="relative w-full h-full">
+                          <Image
+                            src={image.src}
+                            alt={image.alt}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 200px) 100vw, 200px"
+                          />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-            {/* Navigation Buttons */}
+              {/* Stickers Selection */}
+              {activeTab === 'stickers' && frontStickerPickerUI}
+            </>
+          )}
+
+          {currentStep === 2 && (
+            <div>
+              <Tabs tabs={backTabs} activeTab={activeBackTab} onTabChange={handleBackTabChange} />
+              
+              {activeBackTab === 'message' && (
+                <>
+                  <RangeSlider 
+                    value={fontSize}
+                    onChange={setFontSize}
+                    min={16}
+                    max={36}
+                    step={2}
+                    label="Font Size"
+                    unit="px"
+                  />
+                  <div className="mb-4">
+                    <select
+                      value={selectedFont}
+                      onChange={(e) => setSelectedFont(e.target.value)}
+                      className="w-full p-2 rounded-lg border border-gray-200 focus:border-black focus:ring-1 focus:ring-black"
+                    >
+                      {fontOptions.map(font => (
+                        <option key={font.value} value={font.value}>
+                          {font.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="relative">
+                    <textarea 
+                      value={message}
+                      onChange={(e) => {
+                        // Only update if we're under the character limit
+                        if (e.target.value.length <= 600) {
+                          setMessage(e.target.value);
+                        }
+                      }}
+                      placeholder="Write your message here..."
+                      className={`w-full h-48 p-4 rounded-lg border ${
+                        textOverflow ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-gray-200 focus:border-black focus:ring-1 focus:ring-black'
+                      }`}
+                      maxLength={600} // Fixed character limit
+                    ></textarea>
+                    <div className="mt-2 flex justify-between text-sm">
+                      <div className={message.length >= 600 ? 'text-red-500' : 'text-gray-500'}>
+                        {message.length} / 600 characters
+                      </div>
+                      {message.length >= 600 && (
+                        <div className="text-red-500">
+                          Character limit reached
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {activeBackTab === 'stamp' && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-medium mb-3">Choose a Stamp</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Placeholder for stamp options */}
+                    <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
+                      <div className="text-gray-400">Stamp 1</div>
+                    </button>
+                    <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
+                      <div className="text-gray-400">Stamp 2</div>
+                    </button>
+                    <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
+                      <div className="text-gray-400">Stamp 3</div>
+                    </button>
+                    <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
+                      <div className="text-gray-400">Stamp 4</div>
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {activeBackTab === 'stickers' && backStickerPickerUI}
+            </div>
+          )}
+
+          {currentStep === 3 && (
+            <div>
+              <h2 className="text-lg font-medium mb-4">Your postcard is ready!</h2>
+              <p className="text-gray-600 mb-6">
+                You can now download your postcard as a PDF or image file. You can also go back to make any final adjustments.
+              </p>
+              
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <h3 className="font-medium">Download Format</h3>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input 
+                        type="radio" 
+                        name="downloadFormat" 
+                        value="separate" 
+                        checked={downloadFormat === 'separate'}
+                        onChange={() => setDownloadFormat('separate')}
+                        className="w-4 h-4 text-black focus:ring-black"
+                      />
+                      <div>
+                        <div className="font-medium">Separate Images</div>
+                        <div className="text-sm text-gray-500">Download front and back as separate postcard-sized images</div>
+                      </div>
+                    </label>
+                    
+                    <label className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input 
+                        type="radio" 
+                        name="downloadFormat" 
+                        value="a4" 
+                        checked={downloadFormat === 'a4'}
+                        onChange={() => setDownloadFormat('a4')}
+                        className="w-4 h-4 text-black focus:ring-black"
+                      />
+                      <div>
+                        <div className="font-medium">A4 Print Layout</div>
+                        <div className="text-sm text-gray-500">Download both sides on a single A4 page for easy printing</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+                
+                <button 
+                  className="w-full py-3 px-4 rounded-lg bg-black text-white hover:bg-black/90 flex items-center justify-center gap-2"
+                  onClick={handleDownloadPostcard}
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Preparing Download...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M224,152v56a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V152a8,8,0,0,1,16,0v56H208V152a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,132.69V40a8,8,0,0,0-16,0v92.69L93.66,106.34a8,8,0,0,0-11.32,11.32Z"></path>
+                      </svg>
+                      <span>Download Postcard</span>
+                    </>
+                  )}
+                </button>
+                
+                <div className="flex gap-2">
+                  <button 
+                    className="flex-1 py-3 px-4 rounded-lg border border-gray-300 hover:bg-gray-50"
+                    onClick={() => handleStepChange(2)}
+                  >
+                    Edit Back
+                  </button>
+                  <button 
+                    className="flex-1 py-3 px-4 rounded-lg border border-gray-300 hover:bg-gray-50"
+                    onClick={() => handleStepChange(1)}
+                  >
+                    Edit Front
+                  </button>
+                </div>
+              </div>
+
+              {/* Download status notification */}
+              {downloadStatus && (
+                <div className={`mt-4 p-3 rounded-lg ${
+                  downloadStatus.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      {downloadStatus.type === 'success' ? (
+                        <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm">{downloadStatus.message}</p>
+                    </div>
+                    <div className="ml-auto pl-3">
+                      <div className="-mx-1.5 -my-1.5">
+                        <button
+                          onClick={() => setDownloadStatus(null)}
+                          className={`inline-flex rounded-md p-1.5 ${
+                            downloadStatus.type === 'success' ? 'text-green-500 hover:bg-green-200' : 'text-red-500 hover:bg-red-200'
+                          }`}
+                        >
+                          <span className="sr-only">Dismiss</span>
+                          <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Navigation Buttons - Only show for steps 1 and 2 */}
+          {currentStep < 3 && (
             <div className="flex gap-4 mt-8">
               {currentStep > 1 && (
                 <button 
@@ -804,56 +1170,48 @@ export default function TestPage() {
                 </button>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Right Panel - Postcard Preview */}
-        <div className={`col-span-12 ${currentStep < 3 ? 'lg:col-span-9 xl:col-span-8' : 'lg:col-span-12'} flex items-center justify-center`}>
+        <div className="col-span-12 lg:col-span-9 xl:col-span-8 flex items-center justify-center">
           <div className="relative w-full max-w-[800px]">
-            <div className="w-full aspect-[879/591]">
-              {currentStep === 1 ? (
-                // Front Side
-                <div 
-                  className="w-full h-full bg-white relative"
-                >
-                  <img
-                    src={selectedImage?.src || defaultImage.src}
-                    alt={selectedImage?.alt || defaultImage.alt}
-                    className="w-full h-full object-cover p-4 box-border pointer-events-none"
-                  />
-                  <div 
-                    className="absolute inset-0 p-4"
-                    onClick={isFrontPasteMode ? handleFrontCanvasClick : undefined}
-                    key="front-sticker-container"
-                    style={{ pointerEvents: 'auto' }}
-                  >
-                    <canvas
-                      ref={frontCanvasRef}
-                      width="879"
-                      height="591"
-                      className="w-full h-full absolute inset-0 pointer-events-none"
-                    ></canvas>
-                    {frontCanvasElements}
+            {currentStep === 3 ? (
+              // Preview mode - show both sides
+              <div className="space-y-8">
+                <div className="w-full aspect-[879/591]">
+                  <div className="w-full h-full bg-white relative shadow-lg rounded-lg overflow-hidden preview-front-container" id="front-postcard-container">
+                    <div className="w-full h-full p-4 box-border">
+                      <img
+                        src={selectedImage?.src || defaultImage.src}
+                        alt={selectedImage?.alt || defaultImage.alt}
+                        className="w-full h-full object-cover pointer-events-none"
+                        crossOrigin="anonymous"
+                      />
+                    </div>
+                    <div className="absolute inset-0 p-4">
+                      <canvas
+                        width="879"
+                        height="591"
+                        className="w-full h-full absolute inset-0 pointer-events-none"
+                      ></canvas>
+                      {frontCanvasElements}
+                    </div>
+                    <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm download-hide-label">
+                      Front
+                    </div>
                   </div>
                 </div>
-              ) : (
-                // Back Side
-                <div 
-                  className="w-full h-full bg-white relative"
-                >
-                  <div className="w-full h-full relative">
+                
+                <div className="w-full aspect-[879/591]">
+                  <div className="w-full h-full bg-white relative shadow-lg rounded-lg overflow-hidden preview-back-container">
                     <canvas
                       ref={staticCanvasRef}
                       width="879"
                       height="591"
                       className="w-full h-full"
                     ></canvas>
-                    <div 
-                      className="absolute inset-0"
-                      onClick={isBackPasteMode ? handleBackCanvasClick : undefined}
-                      key="back-sticker-container"
-                      style={{ pointerEvents: 'auto' }}
-                    >
+                    <div className="absolute inset-0">
                       <canvas
                         ref={backCanvasRef}
                         width="879"
@@ -862,10 +1220,75 @@ export default function TestPage() {
                       ></canvas>
                       {backCanvasElements}
                     </div>
+                    <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm download-hide-label">
+                      Back
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              // Normal editing mode
+              <div className="w-full aspect-[879/591]">
+                {currentStep === 1 ? (
+                  // Front Side
+                  <div 
+                    className="w-full h-full bg-white relative"
+                    id="front-edit-container"
+                  >
+                    <div className="w-full h-full p-4 box-border">
+                      <img
+                        src={selectedImage?.src || defaultImage.src}
+                        alt={selectedImage?.alt || defaultImage.alt}
+                        className="w-full h-full object-cover pointer-events-none"
+                        crossOrigin="anonymous"
+                      />
+                    </div>
+                    <div 
+                      className="absolute inset-0 p-4"
+                      onClick={isFrontPasteMode ? handleFrontCanvasClick : undefined}
+                      key="front-sticker-container"
+                      style={{ pointerEvents: 'auto' }}
+                    >
+                      <canvas
+                        ref={frontCanvasRef}
+                        width="879"
+                        height="591"
+                        className="w-full h-full absolute inset-0 pointer-events-none"
+                      ></canvas>
+                      {frontCanvasElements}
+                    </div>
+                  </div>
+                ) : (
+                  // Back Side
+                  <div 
+                    className="w-full h-full bg-white relative"
+                  >
+                    <div className="w-full h-full relative">
+                      <canvas
+                        ref={staticCanvasRef}
+                        width="879"
+                        height="591"
+                        className="w-full h-full"
+                      ></canvas>
+                      <div 
+                        className="absolute inset-0"
+                        onClick={isBackPasteMode ? handleBackCanvasClick : undefined}
+                        key="back-sticker-container"
+                        style={{ pointerEvents: 'auto' }}
+                      >
+                        <canvas
+                          ref={backCanvasRef}
+                          width="879"
+                          height="591"
+                          className="w-full h-full absolute inset-0 pointer-events-none"
+                        ></canvas>
+                        {backCanvasElements}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
