@@ -29,7 +29,7 @@ const createStickerStyle = (isDragging = false) => ({
   `
 })
 
-export function StickersTab({ canvasRef, initialStickers = [], onStickersChange, stickerIdPrefix = 'sticker' }) {
+export function StickersTab({ canvasRef, initialStickers = [], onStickersChange, stickerIdPrefix = 'sticker', isPreviewMode = false }) {
   const [pasteMode, setPasteMode] = useState(null)
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 })
   const [stickers, setStickers] = useState(initialStickers)
@@ -38,6 +38,22 @@ export function StickersTab({ canvasRef, initialStickers = [], onStickersChange,
   const [isDragging, setIsDragging] = useState(false)
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 })
   const [stickerStartPos, setStickerStartPos] = useState({ x: 0, y: 0 })
+  const [isMobile, setIsMobile] = useState(false)
+  const longPressTimeoutRef = useRef(null)
+
+  // Detect if we're on mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint in Tailwind
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   // Update parent component when stickers change
   useEffect(() => {
@@ -89,23 +105,88 @@ export function StickersTab({ canvasRef, initialStickers = [], onStickersChange,
       }
     }
 
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
+    // Only add mouse events on desktop
+    if (!isMobile) {
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseup', handleMouseUp)
+    }
+    
     window.addEventListener('keydown', handleKeyDown)
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
+      if (!isMobile) {
+        window.removeEventListener('mousemove', handleMouseMove)
+        window.removeEventListener('mouseup', handleMouseUp)
+      }
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [pasteMode, isDragging, selectedSticker, dragStartPos, stickerStartPos])
+  }, [pasteMode, isDragging, selectedSticker, dragStartPos, stickerStartPos, isMobile])
+
+  // Handle touch events for mobile
+  useEffect(() => {
+    const handleTouchMove = (e) => {
+      if (isDragging && selectedSticker && e.touches && e.touches[0]) {
+        const touch = e.touches[0];
+        
+        // Calculate the delta from the drag start position
+        const deltaX = touch.clientX - dragStartPos.x;
+        const deltaY = touch.clientY - dragStartPos.y;
+        
+        // Apply the delta to the original sticker position
+        const newX = stickerStartPos.x + deltaX;
+        const newY = stickerStartPos.y + deltaY;
+        
+        setStickers(prev => prev.map(s => 
+          s.id === selectedSticker 
+            ? { ...s, position: { x: newX, y: newY }, isDragging: true }
+            : s
+        ));
+      }
+    };
+
+    const handleTouchEnd = () => {
+      // Clear any pending long press
+      if (longPressTimeoutRef.current) {
+        clearTimeout(longPressTimeoutRef.current);
+        longPressTimeoutRef.current = null;
+      }
+      
+      if (isDragging) {
+        setIsDragging(false);
+        // Reset isDragging flag on stickers
+        setStickers(prev => prev.map(s => 
+          s.id === selectedSticker 
+            ? { ...s, isDragging: false }
+            : s
+        ));
+      }
+    };
+
+    // Only add touch events on mobile
+    if (isMobile) {
+      window.addEventListener('touchmove', handleTouchMove);
+      window.addEventListener('touchend', handleTouchEnd);
+      window.addEventListener('touchcancel', handleTouchEnd);
+    }
+
+    return () => {
+      if (isMobile) {
+        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchend', handleTouchEnd);
+        window.removeEventListener('touchcancel', handleTouchEnd);
+      }
+    };
+  }, [isDragging, selectedSticker, dragStartPos, stickerStartPos, isMobile]);
 
   const handleCanvasClick = (e) => {
     if (pasteMode) {
       const canvasRect = e.currentTarget.getBoundingClientRect()
       const stickerSize = 56
-      const newX = e.clientX - canvasRect.left - (stickerSize / 2)
-      const newY = e.clientY - canvasRect.top - (stickerSize / 2)
+      const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0)
+      const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0)
+      
+      const newX = clientX - canvasRect.left - (stickerSize / 2)
+      const newY = clientY - canvasRect.top - (stickerSize / 2)
       const randomRotation = Math.random() * 32 - 16
 
       const newSticker = {
@@ -118,6 +199,11 @@ export function StickersTab({ canvasRef, initialStickers = [], onStickersChange,
       
       setStickers(prev => [...prev, newSticker])
       setNextId(prev => prev + 1)
+      
+      // On mobile, exit paste mode after placing a sticker
+      if (isMobile) {
+        setPasteMode(null);
+      }
     } else {
       // Only deselect if clicking on the canvas (not on a sticker)
       setSelectedSticker(null)
@@ -127,18 +213,52 @@ export function StickersTab({ canvasRef, initialStickers = [], onStickersChange,
   const handleStickerMouseDown = (e, stickerId) => {
     e.stopPropagation()
     
-    const sticker = stickers.find(s => s.id === stickerId)
-    if (sticker) {
-      // Save the initial mouse position when starting to drag
-      setDragStartPos({ x: e.clientX, y: e.clientY })
-      
-      // Save the initial sticker position
-      setStickerStartPos({ ...sticker.position })
-      
-      // Set the selected sticker and start dragging
-      setSelectedSticker(stickerId)
-      setIsDragging(true)
+    // For desktop, handle as before
+    if (!isMobile) {
+      const sticker = stickers.find(s => s.id === stickerId)
+      if (sticker) {
+        // Save the initial mouse position when starting to drag
+        setDragStartPos({ x: e.clientX, y: e.clientY })
+        
+        // Save the initial sticker position
+        setStickerStartPos({ ...sticker.position })
+        
+        // Set the selected sticker and start dragging
+        setSelectedSticker(stickerId)
+        setIsDragging(true)
+      }
     }
+  }
+  
+  const handleStickerTouchStart = (e, stickerId) => {
+    e.stopPropagation();
+    
+    const sticker = stickers.find(s => s.id === stickerId);
+    if (!sticker) return;
+    
+    // First, select the sticker to show delete button
+    setSelectedSticker(stickerId);
+    
+    // Clear any existing timeout
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+    }
+    
+    // Set up long press detection for drag
+    longPressTimeoutRef.current = setTimeout(() => {
+      if (e.touches && e.touches[0]) {
+        const touch = e.touches[0];
+        
+        // Save the initial touch position
+        setDragStartPos({ x: touch.clientX, y: touch.clientY });
+        
+        // Save the initial sticker position
+        setStickerStartPos({ ...sticker.position });
+        
+        // Start dragging
+        setIsDragging(true);
+      }
+    }, 300); // 300ms is a common threshold for long press
   }
 
   const handleDeleteSticker = (stickerId) => {
@@ -152,6 +272,46 @@ export function StickersTab({ canvasRef, initialStickers = [], onStickersChange,
     // Don't reset selectedSticker here to maintain selection when switching tabs
   }
 
+  // Handle direct placement of stickers on mobile
+  const handleMobileStickerSelect = (sticker) => {
+    if (isMobile) {
+      // For mobile, directly place the sticker in the center of the canvas
+      if (canvasRef && canvasRef.current) {
+        const canvasRect = canvasRef.current.getBoundingClientRect();
+        
+        // Calculate center position
+        const centerX = canvasRect.width / 2;
+        const centerY = canvasRect.height / 2;
+        
+        // Create sticker size and random rotation
+        const stickerSize = 56;
+        const randomRotation = Math.random() * 32 - 16;
+        
+        // Create new sticker directly
+        const newSticker = {
+          id: nextId,
+          emoji: sticker.emoji,
+          position: { 
+            x: centerX - (stickerSize / 2), 
+            y: centerY - (stickerSize / 2) 
+          },
+          rotation: randomRotation,
+          isDragging: false
+        };
+        
+        // Add sticker to state
+        setStickers(prev => [...prev, newSticker]);
+        setNextId(prev => prev + 1);
+        
+        // Deselect any previously selected sticker
+        setSelectedSticker(null);
+      }
+    } else {
+      // On desktop, just enter paste mode as before
+      setPasteMode(sticker);
+    }
+  };
+
   return {
     stickerPickerUI: (
       <div>
@@ -161,7 +321,7 @@ export function StickersTab({ canvasRef, initialStickers = [], onStickersChange,
             <button
               key={sticker.id}
               className="p-2 rounded-lg hover:bg-black/5 aspect-square flex items-center justify-center"
-              onClick={() => setPasteMode(sticker)}
+              onClick={() => handleMobileStickerSelect(sticker)}
             >
               <span 
                 className="text-3xl select-none transform transition-transform duration-200 hover:scale-110"
@@ -180,7 +340,7 @@ export function StickersTab({ canvasRef, initialStickers = [], onStickersChange,
         {stickers.map(sticker => (
           <div
             key={sticker.id}
-            className="absolute select-none cursor-move"
+            className={`absolute select-none ${!isMobile ? 'cursor-move' : ''}`}
             data-sticker={`${stickerIdPrefix}-${sticker.id}`}
             style={{
               left: `${sticker.position.x}px`,
@@ -190,7 +350,14 @@ export function StickersTab({ canvasRef, initialStickers = [], onStickersChange,
               pointerEvents: 'auto' // Ensure stickers are always interactive
             }}
             onMouseDown={(e) => handleStickerMouseDown(e, sticker.id)}
-            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => handleStickerTouchStart(e, sticker.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              // On mobile, clicking selects the sticker to show delete button
+              if (isMobile) {
+                setSelectedSticker(sticker.id);
+              }
+            }}
           >
             <span 
               className="text-6xl inline-block"
@@ -226,8 +393,8 @@ export function StickersTab({ canvasRef, initialStickers = [], onStickersChange,
           )}
         </AnimatePresence>
 
-        {/* Cursor Sticker */}
-        {pasteMode && (
+        {/* Cursor Sticker - Only show on desktop */}
+        {pasteMode && !isMobile && (
           <div
             className="fixed pointer-events-none select-none"
             style={{
@@ -245,12 +412,24 @@ export function StickersTab({ canvasRef, initialStickers = [], onStickersChange,
             </span>
           </div>
         )}
+        
+        {/* Invisible overlay to handle canvas clicks for deselection */}
+        <div 
+          className="absolute inset-0 w-full h-full"
+          style={{ pointerEvents: selectedSticker ? 'auto' : 'none' }}
+          onClick={() => {
+            if (selectedSticker) {
+              setSelectedSticker(null);
+            }
+          }}
+        />
       </>
     ),
     handleCanvasClick,
     isPasteMode: !!pasteMode,
     resetPasteMode,
     stickers, // Expose stickers array
-    setSelectedSticker // Expose function to select stickers
+    setSelectedSticker, // Expose function to select stickers
+    isMobile // Expose mobile detection
   }
 }
