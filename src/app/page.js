@@ -122,23 +122,41 @@ export default function TestPage() {
   const [selectedFont, setSelectedFont] = useState('Caveat')
   const [textColor, setTextColor] = useState('#000000')
   const [fontSize, setFontSize] = useState(24) // Default font size
+  const [recipientAddress, setRecipientAddress] = useState('') // Add recipient address state
+  
+  // Add state for stickers
+  const [frontStickers, setFrontStickers] = useState([])
+  const [backStickers, setBackStickers] = useState([])
 
-  // Create separate sticker functionality for front and back
+  // Initialize front stickers functionality
   const { 
     stickerPickerUI: frontStickerPickerUI, 
-    canvasElements: frontCanvasElements, 
+    canvasElements: frontCanvasElements,
     handleCanvasClick: handleFrontCanvasClick, 
     isPasteMode: isFrontPasteMode,
-    resetPasteMode: resetFrontPasteMode
-  } = StickersTab({ canvasRef: frontCanvasRef })
+    resetPasteMode: resetFrontPasteMode,
+    stickers: currentFrontStickers,
+    setSelectedSticker: setSelectedFrontSticker
+  } = StickersTab({ 
+    canvasRef: frontCanvasRef,
+    initialStickers: frontStickers,
+    onStickersChange: setFrontStickers
+  })
 
+  // Initialize back stickers functionality
   const { 
     stickerPickerUI: backStickerPickerUI, 
-    canvasElements: backCanvasElements, 
+    canvasElements: backCanvasElements,
     handleCanvasClick: handleBackCanvasClick, 
     isPasteMode: isBackPasteMode,
-    resetPasteMode: resetBackPasteMode
-  } = StickersTab({ canvasRef: backCanvasRef })
+    resetPasteMode: resetBackPasteMode,
+    stickers: currentBackStickers,
+    setSelectedSticker: setSelectedBackSticker
+  } = StickersTab({ 
+    canvasRef: backCanvasRef,
+    initialStickers: backStickers,
+    onStickersChange: setBackStickers
+  })
 
   const handleStepChange = (stepId) => {
     setCurrentStep(stepId)
@@ -147,17 +165,19 @@ export default function TestPage() {
     resetBackPasteMode()
   }
 
-  // Handle tab changes to reset paste mode
-  const handleTabChange = (tabId) => {
-    setActiveTab(tabId)
-    if (tabId !== 'stickers') {
+  // Handle tab changes
+  const handleTabChange = (tab) => {
+    setActiveTab(tab)
+    if (tab !== 'stickers') {
+      // Only reset paste mode, not selection
       resetFrontPasteMode()
     }
   }
 
-  const handleBackTabChange = (tabId) => {
-    setActiveBackTab(tabId)
-    if (tabId !== 'stickers') {
+  const handleBackTabChange = (tab) => {
+    setActiveBackTab(tab)
+    if (tab !== 'stickers') {
+      // Only reset paste mode, not selection
       resetBackPasteMode()
     }
   }
@@ -492,6 +512,111 @@ export default function TestPage() {
     return () => clearTimeout(timeoutId);
   }, [message]);
 
+  // Front side tabs content
+  const getTabContent = () => {
+    switch (activeTab) {
+      case 'text':
+        return (
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-4">Add Your Message</h3>
+            <textarea
+              value={message}
+              onChange={handleMessageChange}
+              maxLength={fixedCharLimit}
+              className="w-full h-40 p-3 border rounded resize-none"
+              placeholder="Write your message here..."
+              style={{
+                fontSize: `${fontSize * 0.67}px`,
+                lineHeight: '1.5',
+                fontFamily: selectedFont
+              }}
+            ></textarea>
+            <div className={`text-sm mt-2 ${remainingChars <= 50 ? 'text-red-500' : 'text-gray-500'}`}>
+              {remainingChars} characters remaining
+            </div>
+          </div>
+        );
+      case 'font':
+        return (
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-4">Choose Font Style</h3>
+            <RangeSlider 
+              label="Font Size" 
+              min={16} 
+              max={36} 
+              step={2} 
+              value={fontSize} 
+              onChange={setFontSize} 
+            />
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              {fontOptions.map((font) => (
+                <button
+                  key={font}
+                  className={`p-3 text-center border rounded ${selectedFont === font ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'}`}
+                  style={{ fontFamily: font }}
+                  onClick={() => setSelectedFont(font)}
+                >
+                  {font}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      case 'stickers':
+        return frontStickerPickerUI;
+      default:
+        return null;
+    }
+  };
+
+  // Back side tabs content
+  const getBackTabContent = () => {
+    switch (activeBackTab) {
+      case 'message':
+        return (
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-4">Add Your Message</h3>
+            <textarea
+              value={message}
+              onChange={(e) => {
+                // Only update if we're under the character limit
+                if (e.target.value.length <= 600) {
+                  setMessage(e.target.value);
+                }
+              }}
+              className="w-full h-40 p-3 border rounded resize-none"
+              placeholder="Write your message here..."
+              style={{
+                fontSize: `${fontSize * 0.67}px`,
+                lineHeight: '1.5',
+                fontFamily: selectedFont
+              }}
+              maxLength={600}
+            ></textarea>
+            <div className={`text-sm mt-2 ${message.length >= 550 ? 'text-red-500' : 'text-gray-500'}`}>
+              {message.length} / 600 characters
+            </div>
+          </div>
+        );
+      case 'text':
+        return (
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-4">Add Recipient Address</h3>
+            <textarea
+              value={recipientAddress}
+              onChange={(e) => setRecipientAddress(e.target.value)}
+              className="w-full h-40 p-3 border rounded resize-none"
+              placeholder="Recipient address..."
+            ></textarea>
+          </div>
+        );
+      case 'stickers':
+        return backStickerPickerUI;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FDF6EC]">
       <Stepper 
@@ -700,6 +825,7 @@ export default function TestPage() {
                     className="absolute inset-0 p-4"
                     onClick={isFrontPasteMode ? handleFrontCanvasClick : undefined}
                     key="front-sticker-container"
+                    style={{ pointerEvents: 'auto' }}
                   >
                     <canvas
                       ref={frontCanvasRef}
@@ -726,6 +852,7 @@ export default function TestPage() {
                       className="absolute inset-0"
                       onClick={isBackPasteMode ? handleBackCanvasClick : undefined}
                       key="back-sticker-container"
+                      style={{ pointerEvents: 'auto' }}
                     >
                       <canvas
                         ref={backCanvasRef}
