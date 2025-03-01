@@ -15,6 +15,13 @@ const tabs = [
   { id: 'draw', label: 'Draw' }
 ]
 
+// Add tabs for the back of the postcard
+const backTabs = [
+  { id: 'message', label: 'Message' },
+  { id: 'stamp', label: 'Stamp' },
+  { id: 'stickers', label: 'Stickers' }
+]
+
 const sampleImages = [
   { 
     id: 'pattern1', 
@@ -104,9 +111,11 @@ const fontOptions = [
 
 export default function TestPage() {
   const [activeTab, setActiveTab] = useState('picture')
+  const [activeBackTab, setActiveBackTab] = useState('message')
   const [selectedImage, setSelectedImage] = useState(defaultImage)
   const [currentStep, setCurrentStep] = useState(1)
-  const canvasRef = useRef(null)
+  const frontCanvasRef = useRef(null)
+  const backCanvasRef = useRef(null)
   const [uploadedImage, setUploadedImage] = useState(null)
   const staticCanvasRef = useRef(null)
   const [message, setMessage] = useState('')
@@ -114,10 +123,43 @@ export default function TestPage() {
   const [textColor, setTextColor] = useState('#000000')
   const [fontSize, setFontSize] = useState(24) // Default font size
 
-  const { stickerPickerUI, canvasElements, handleCanvasClick, isPasteMode } = StickersTab({ canvasRef })
+  // Create separate sticker functionality for front and back
+  const { 
+    stickerPickerUI: frontStickerPickerUI, 
+    canvasElements: frontCanvasElements, 
+    handleCanvasClick: handleFrontCanvasClick, 
+    isPasteMode: isFrontPasteMode,
+    resetPasteMode: resetFrontPasteMode
+  } = StickersTab({ canvasRef: frontCanvasRef })
+
+  const { 
+    stickerPickerUI: backStickerPickerUI, 
+    canvasElements: backCanvasElements, 
+    handleCanvasClick: handleBackCanvasClick, 
+    isPasteMode: isBackPasteMode,
+    resetPasteMode: resetBackPasteMode
+  } = StickersTab({ canvasRef: backCanvasRef })
 
   const handleStepChange = (stepId) => {
     setCurrentStep(stepId)
+    // Reset paste mode when changing steps
+    resetFrontPasteMode()
+    resetBackPasteMode()
+  }
+
+  // Handle tab changes to reset paste mode
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId)
+    if (tabId !== 'stickers') {
+      resetFrontPasteMode()
+    }
+  }
+
+  const handleBackTabChange = (tabId) => {
+    setActiveBackTab(tabId)
+    if (tabId !== 'stickers') {
+      resetBackPasteMode()
+    }
   }
 
   const handleImageUpload = async (event) => {
@@ -479,7 +521,7 @@ export default function TestPage() {
 
             {currentStep === 1 && (
               <>
-                <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+                <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
 
                 {/* Picture Selection */}
                 {activeTab === 'picture' && (
@@ -527,65 +569,94 @@ export default function TestPage() {
                 )}
 
                 {/* Stickers Selection */}
-                {activeTab === 'stickers' && stickerPickerUI}
+                {activeTab === 'stickers' && frontStickerPickerUI}
               </>
             )}
 
             {currentStep === 2 && (
               <div>
-                <RangeSlider 
-                  value={fontSize}
-                  onChange={setFontSize}
-                  min={16}
-                  max={36}
-                  step={2}
-                  label="Font Size"
-                  unit="px"
-                />
-                <div className="mb-4">
-                  <select
-                    value={selectedFont}
-                    onChange={(e) => setSelectedFont(e.target.value)}
-                    className="w-full p-2 rounded-lg border border-gray-200 focus:border-black focus:ring-1 focus:ring-black"
-                  >
-                    {fontOptions.map(font => (
-                      <option key={font.value} value={font.value}>
-                        {font.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="relative">
-                  <textarea 
-                    value={message}
-                    onChange={(e) => {
-                      // Only update if we're under the character limit
-                      if (e.target.value.length <= 600) {
-                        setMessage(e.target.value);
-                      }
-                    }}
-                    placeholder="Write your message here..."
-                    className={`w-full h-48 p-4 rounded-lg border ${
-                      textOverflow ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-gray-200 focus:border-black focus:ring-1 focus:ring-black'
-                    } font-sans`}
-                    style={{
-                      fontSize: '16px', // Fixed default font size
-                      lineHeight: '1.5',
-                      fontFamily: 'inherit' // Use default font family
-                    }}
-                    maxLength={600} // Fixed character limit
-                  />
-                  <div className="mt-2 flex justify-between text-sm">
-                    <div className={message.length >= 600 ? 'text-red-500' : 'text-gray-500'}>
-                      {message.length} / 600 characters
+                <Tabs tabs={backTabs} activeTab={activeBackTab} onTabChange={handleBackTabChange} />
+                
+                {activeBackTab === 'message' && (
+                  <>
+                    <RangeSlider 
+                      value={fontSize}
+                      onChange={setFontSize}
+                      min={16}
+                      max={36}
+                      step={2}
+                      label="Font Size"
+                      unit="px"
+                    />
+                    <div className="mb-4">
+                      <select
+                        value={selectedFont}
+                        onChange={(e) => setSelectedFont(e.target.value)}
+                        className="w-full p-2 rounded-lg border border-gray-200 focus:border-black focus:ring-1 focus:ring-black"
+                      >
+                        {fontOptions.map(font => (
+                          <option key={font.value} value={font.value}>
+                            {font.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    {message.length >= 600 && (
-                      <div className="text-red-500">
-                        Character limit reached
+                    <div className="relative">
+                      <textarea 
+                        value={message}
+                        onChange={(e) => {
+                          // Only update if we're under the character limit
+                          if (e.target.value.length <= 600) {
+                            setMessage(e.target.value);
+                          }
+                        }}
+                        placeholder="Write your message here..."
+                        className={`w-full h-48 p-4 rounded-lg border ${
+                          textOverflow ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-gray-200 focus:border-black focus:ring-1 focus:ring-black'
+                        } font-sans`}
+                        style={{
+                          fontSize: '16px', // Fixed default font size
+                          lineHeight: '1.5',
+                          fontFamily: 'inherit' // Use default font family
+                        }}
+                        maxLength={600} // Fixed character limit
+                      />
+                      <div className="mt-2 flex justify-between text-sm">
+                        <div className={message.length >= 600 ? 'text-red-500' : 'text-gray-500'}>
+                          {message.length} / 600 characters
+                        </div>
+                        {message.length >= 600 && (
+                          <div className="text-red-500">
+                            Character limit reached
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
+                  </>
+                )}
+                
+                {activeBackTab === 'stamp' && (
+                  <div className="mt-4">
+                    <h3 className="text-lg font-medium mb-3">Choose a Stamp</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Placeholder for stamp options */}
+                      <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
+                        <div className="text-gray-400">Stamp 1</div>
+                      </button>
+                      <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
+                        <div className="text-gray-400">Stamp 2</div>
+                      </button>
+                      <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
+                        <div className="text-gray-400">Stamp 3</div>
+                      </button>
+                      <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
+                        <div className="text-gray-400">Stamp 4</div>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
+                
+                {activeBackTab === 'stickers' && backStickerPickerUI}
               </div>
             )}
 
@@ -617,19 +688,33 @@ export default function TestPage() {
             <div className="w-full aspect-[879/591]">
               {currentStep === 1 ? (
                 // Front Side
-                <div className="w-full h-full bg-white relative">
+                <div 
+                  className="w-full h-full bg-white relative"
+                >
                   <img
                     src={selectedImage?.src || defaultImage.src}
                     alt={selectedImage?.alt || defaultImage.alt}
                     className="w-full h-full object-cover p-4 box-border pointer-events-none"
                   />
-                  <div className="absolute inset-0 p-4">
-                    {canvasElements}
+                  <div 
+                    className="absolute inset-0 p-4"
+                    onClick={isFrontPasteMode ? handleFrontCanvasClick : undefined}
+                    key="front-sticker-container"
+                  >
+                    <canvas
+                      ref={frontCanvasRef}
+                      width="879"
+                      height="591"
+                      className="w-full h-full absolute inset-0 pointer-events-none"
+                    ></canvas>
+                    {frontCanvasElements}
                   </div>
                 </div>
               ) : (
                 // Back Side
-                <div className="w-full h-full bg-white relative">
+                <div 
+                  className="w-full h-full bg-white relative"
+                >
                   <div className="w-full h-full relative">
                     <canvas
                       ref={staticCanvasRef}
@@ -637,6 +722,19 @@ export default function TestPage() {
                       height="591"
                       className="w-full h-full"
                     ></canvas>
+                    <div 
+                      className="absolute inset-0"
+                      onClick={isBackPasteMode ? handleBackCanvasClick : undefined}
+                      key="back-sticker-container"
+                    >
+                      <canvas
+                        ref={backCanvasRef}
+                        width="879"
+                        height="591"
+                        className="w-full h-full absolute inset-0 pointer-events-none"
+                      ></canvas>
+                      {backCanvasElements}
+                    </div>
                   </div>
                 </div>
               )}

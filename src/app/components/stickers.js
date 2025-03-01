@@ -59,11 +59,8 @@ export function StickersTab({ canvasRef }) {
   }, [pasteMode])
 
   const handleCanvasClick = (e) => {
-    if (!canvasRef.current?.contains(e.target)) return
-    if (e.target !== canvasRef.current) return
-    
     if (pasteMode) {
-      const canvasRect = canvasRef.current.getBoundingClientRect()
+      const canvasRect = e.currentTarget.getBoundingClientRect()
       const stickerSize = 56
       const newX = e.clientX - canvasRect.left - (stickerSize / 2)
       const newY = e.clientY - canvasRect.top - (stickerSize / 2)
@@ -79,7 +76,7 @@ export function StickersTab({ canvasRef }) {
 
       setStickers(prev => [...prev, newSticker])
       setNextId(prev => prev + 1)
-    } else if (e.target === canvasRef.current) {
+    } else {
       setSelectedSticker(null)
     }
   }
@@ -87,6 +84,11 @@ export function StickersTab({ canvasRef }) {
   const handleDeleteSticker = (stickerId) => {
     setStickers(prev => prev.filter(sticker => sticker.id !== stickerId))
     setSelectedSticker(null)
+  }
+
+  // Add a function to reset paste mode
+  const resetPasteMode = () => {
+    setPasteMode(null)
   }
 
   return {
@@ -181,6 +183,7 @@ export function StickersTab({ canvasRef }) {
       </>
     ),
     handleCanvasClick,
-    isPasteMode: !!pasteMode
+    isPasteMode: !!pasteMode,
+    resetPasteMode
   }
 }
