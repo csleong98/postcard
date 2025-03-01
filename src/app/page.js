@@ -54,20 +54,17 @@ const sampleImages = [
 const steps = [
   { 
     id: 1, 
-    name: 'Front', 
-    description: 'Design the front', 
+    name: 'Front',
     status: 'current' 
   },
   { 
     id: 2, 
-    name: 'Back', 
-    description: 'Write your message', 
+    name: 'Back',
     status: 'upcoming' 
   },
   { 
     id: 3, 
-    name: 'Preview', 
-    description: 'Check and download', 
+    name: 'Preview',
     status: 'upcoming' 
   }
 ]
@@ -868,41 +865,66 @@ export default function TestPage() {
 
   return (
     <div className="min-h-screen bg-[#FDF6EC]">
-      <Stepper 
-        steps={steps.map(step => ({
-          ...step,
-          status: step.id === currentStep 
-            ? 'current'
-            : step.id < currentStep 
-              ? 'complete' 
-              : 'upcoming'
-        }))} 
-        variant="default"
-      />
+      <div className="px-4 py-3 md:py-6">
+        {/* Show full stepper on desktop, only dots on mobile */}
+        <div className="hidden md:block">
+          <Stepper 
+            steps={steps.map(step => ({
+              ...step,
+              status: step.id === currentStep 
+                ? 'current'
+                : step.id < currentStep 
+                  ? 'complete' 
+                  : 'upcoming'
+            }))} 
+            variant="simple"
+          />
+        </div>
+        
+        <div className="block md:hidden">
+          <Stepper 
+            steps={steps.map(step => ({
+              ...step,
+              name: '', // Remove names for mobile view
+              status: step.id === currentStep 
+                ? 'current'
+                : step.id < currentStep 
+                  ? 'complete' 
+                  : 'upcoming'
+            }))} 
+            variant="simple"
+          />
+          
+          {/* Title only on mobile */}
+          <div className="text-center mt-4">
+            <h1 className="text-xl font-bold">
+              {currentStep === 1 ? 'Design the front' : 
+               currentStep === 2 ? 'Write your message' : 
+               'Preview & Download'}
+            </h1>
+          </div>
+        </div>
+      </div>
       
-      <div className="grid grid-cols-12 gap-4 p-4 md:p-8">
+      <div className="flex flex-col lg:flex-row h-full min-h-[calc(100vh-100px)]">
         {/* Mobile View Controls - Only visible on small screens */}
-        <div className="col-span-12 lg:hidden mb-4">
+        <div className="lg:hidden mb-4 px-4">
           <div className="flex items-center justify-between">
             {/* Back button removed */}
             
             {/* Preview button removed */}
           </div>
           
-          <h1 className="h3 my-4 text-center">
-            {currentStep === 1 ? 'Design the front' : 
-             currentStep === 2 ? 'Write your message' : 
-             'Preview & Download'}
-          </h1>
+          {/* Remove the mobile title since we've moved it to below the stepper */}
         </div>
         
         {/* Left Panel - Controls */}
-        <div className="col-span-12 lg:col-span-3 xl:col-span-4 order-2 lg:order-1">
+        <div className="w-full lg:w-1/4 xl:w-1/3 order-2 lg:order-1 bg-white p-4 lg:h-full lg:min-h-[calc(100vh-100px)]">
           <div className="lg:sticky lg:top-8">
             {/* Only show on desktop - Back button removed */}
             <div className="hidden lg:block">
               <h1 className="h3 mb-4">
-                {currentStep === 1 ? 'Design the front' : 
+                {currentStep === 1 ? 'Customize your postcard' : 
                  currentStep === 2 ? 'Write your message' : 
                  'Preview & Download'}
               </h1>
@@ -1227,7 +1249,7 @@ export default function TestPage() {
         </div>
 
         {/* Right Panel - Postcard Preview */}
-        <div id="postcard-preview" className="col-span-12 lg:col-span-9 xl:col-span-8 flex items-center justify-center order-1 lg:order-2 mb-8 lg:mb-0">
+        <div id="postcard-preview" className="w-full lg:w-3/4 xl:w-2/3 flex items-center justify-center order-1 lg:order-2 mb-8 lg:mb-0 p-4 md:p-8 lg:h-full lg:min-h-[calc(100vh-100px)]">
           <div className="relative w-full max-w-[800px]">
             {currentStep === 3 ? (
               // Preview mode - show both sides
