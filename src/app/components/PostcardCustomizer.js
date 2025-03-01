@@ -57,6 +57,91 @@ export default function PostcardCustomizer() {
     }
   }, [previewLayout]);
 
+  // Add useEffect to update the canvas text in real-time when message changes
+  useEffect(() => {
+    const canvas = staticCanvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Clear and redraw the static elements
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#cccccc';
+    ctx.lineWidth = 1;
+    
+    // Scale stamp box and divider line with larger padding for mobile
+    const padding = isMobile ? canvas.width * (32/879) : canvas.width * (16/879);
+    const stampWidth = canvas.width * (120/879);
+    const stampHeight = canvas.height * (160/591);
+    
+    // Draw stamp box
+    ctx.strokeRect(canvas.width - stampWidth - padding, padding, stampWidth, stampHeight);
+    
+    // Draw divider line
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, padding);
+    ctx.lineTo(canvas.width / 2, canvas.height - padding);
+    ctx.stroke();
+    
+    // Render the message text with wrapping
+    if (message) {
+      ctx.font = isMobile ? `16px ${selectedFont}` : `24px ${selectedFont}`;
+      ctx.fillStyle = textColor;
+      
+      const maxWidth = (canvas.width / 2) - (padding * 2);
+      const textX = padding;
+      let textY = padding * 2;
+      const lineHeight = isMobile ? 20 : 32;
+      
+      // Function to wrap text and handle manual line breaks
+      const wrapText = (text, x, y, maxWidth, lineHeight) => {
+        // Split text by manual line breaks first
+        const paragraphs = text.split('\n');
+        let currentY = y;
+        
+        paragraphs.forEach(paragraph => {
+          if (paragraph === '') {
+            // Handle empty lines (just a newline)
+            currentY += lineHeight;
+            return;
+          }
+          
+          // Split the paragraph into words
+          const words = paragraph.split(' ');
+          let line = '';
+          
+          // Process each word
+          for (let i = 0; i < words.length; i++) {
+            const word = words[i];
+            const testLine = line + (line ? ' ' : '') + word;
+            const metrics = ctx.measureText(testLine);
+            
+            // If adding this word would exceed maxWidth
+            if (metrics.width > maxWidth && line !== '') {
+              // Draw the current line without this word
+              ctx.fillText(line, x, currentY);
+              // Start a new line with this word
+              line = word;
+              currentY += lineHeight;
+            } else {
+              // Add this word to the current line
+              line = testLine;
+            }
+          }
+          
+          // Draw the last line of this paragraph
+          if (line) {
+            ctx.fillText(line, x, currentY);
+            currentY += lineHeight;
+          }
+        });
+      };
+      
+      // Call the wrap text function
+      wrapText(message, textX, textY, maxWidth, lineHeight);
+    }
+  }, [message, selectedFont, textColor, isMobile]);
+
   // Add useEffect to detect mobile screen size
   useEffect(() => {
     const checkMobile = () => {
@@ -138,21 +223,6 @@ export default function PostcardCustomizer() {
       console.log('No file selected'); // Debug log
     }
   };
-
-  useEffect(() => {
-    const canvas = staticCanvasRef.current;
-    const ctx = canvas.getContext('2d');
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#cccccc';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(canvas.width - 120 - 16, 16, 120, 160);
-    
-    ctx.beginPath();
-    ctx.moveTo(canvas.width / 2, 16);
-    ctx.lineTo(canvas.width / 2, canvas.height - 16);
-    ctx.stroke();
-  }, []);
 
   const startDrawing = (e) => {
     if (selectedTool) {
@@ -356,15 +426,57 @@ export default function PostcardCustomizer() {
             if (textContent) {
               ctx.font = `${24 * scale}px ${selectedFont}`;
               ctx.fillStyle = textColor;
-              const lines = textContent.split('\n');
-              let textY = y + (36 * scale);
               const maxWidth = (w / 2) - (40 * scale);
               const textX = x + (36 * scale);
+              let textY = y + (36 * scale);
+              const lineHeight = 24 * scale;
 
-              lines.forEach(line => {
-                ctx.fillText(line, textX, textY, maxWidth);
-                textY += 24 * scale;
-              });
+              // Function to wrap text and handle manual line breaks
+              const wrapText = (text, x, y, maxWidth, lineHeight) => {
+                // Split text by manual line breaks first
+                const paragraphs = text.split('\n');
+                let currentY = y;
+                
+                paragraphs.forEach(paragraph => {
+                  if (paragraph === '') {
+                    // Handle empty lines (just a newline)
+                    currentY += lineHeight;
+                    return;
+                  }
+                  
+                  // Split the paragraph into words
+                  const words = paragraph.split(' ');
+                  let line = '';
+                  
+                  // Process each word
+                  for (let i = 0; i < words.length; i++) {
+                    const word = words[i];
+                    const testLine = line + (line ? ' ' : '') + word;
+                    const metrics = ctx.measureText(testLine);
+                    
+                    // If adding this word would exceed maxWidth
+                    if (metrics.width > maxWidth && line !== '') {
+                      // Draw the current line without this word
+                      ctx.fillText(line, x, currentY);
+                      // Start a new line with this word
+                      line = word;
+                      currentY += lineHeight;
+                    } else {
+                      // Add this word to the current line
+                      line = testLine;
+                    }
+                  }
+                  
+                  // Draw the last line of this paragraph
+                  if (line) {
+                    ctx.fillText(line, x, currentY);
+                    currentY += lineHeight;
+                  }
+                });
+              };
+              
+              // Call the wrap text function
+              wrapText(textContent, textX, textY, maxWidth, lineHeight);
             }
           }
         );
@@ -500,6 +612,8 @@ export default function PostcardCustomizer() {
                           color: textColor,
                           fontSize: isMobile ? '16px' : '24px',
                           lineHeight: '1.5',
+                          whiteSpace: 'pre',
+                          overflow: 'auto'
                         }}
                       />
                     </div>
@@ -598,6 +712,8 @@ export default function PostcardCustomizer() {
                             color: textColor,
                             fontSize: '24px',
                             lineHeight: '1.5',
+                            whiteSpace: 'pre',
+                            overflow: 'auto'
                           }}
                         />
                       </div>
