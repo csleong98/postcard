@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Image from "next/image"
 import Link from "next/link"
-import { Eye, Upload } from "@phosphor-icons/react"
+import { Eye, Upload, Question, ChatCircle } from "@phosphor-icons/react"
 import { Tabs } from './components/common/Tabs'
 import { Stepper } from './components/common/Stepper'
 import { StickersTab } from './components/stickers'
@@ -54,17 +54,17 @@ const sampleImages = [
 const steps = [
   { 
     id: 1, 
-    name: 'Front',
+    name: 'Front', 
     status: 'current' 
   },
   { 
     id: 2, 
-    name: 'Back',
+    name: 'Back', 
     status: 'upcoming' 
   },
   { 
     id: 3, 
-    name: 'Preview',
+    name: 'Preview', 
     status: 'upcoming' 
   }
 ]
@@ -765,7 +765,7 @@ export default function TestPage() {
   const getTabContent = () => {
     switch (activeTab) {
       case 'text':
-        return (
+  return (
           <div className="p-4">
             <h3 className="text-lg font-semibold mb-4">Add Your Message</h3>
             <textarea
@@ -864,143 +864,105 @@ export default function TestPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDF6EC]">
-      <div className="px-4 py-3 md:py-6">
-        {/* Show full stepper on desktop, only dots on mobile */}
-        <div className="hidden md:block">
-          <Stepper 
-            steps={steps.map(step => ({
-              ...step,
-              status: step.id === currentStep 
-                ? 'current'
-                : step.id < currentStep 
-                  ? 'complete' 
-                  : 'upcoming'
-            }))} 
-            variant="simple"
-          />
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="bg-[#222222] text-white py-4 px-6 flex justify-between items-center sticky top-0 z-20">
+        <h1 className="text-3xl font-light italic font-['PP_Editorial_New'] mx-auto">Postcards</h1>
+        <div className="flex items-center gap-4 absolute right-6">
+          <button className="flex items-center gap-1 hover:text-gray-300">
+            <ChatCircle size={24} weight="fill" />
+            <span className="hidden md:inline">Give feedback</span>
+          </button>
+          <button className="flex items-center gap-1 hover:text-gray-300">
+            <Question size={24} weight="fill" />
+            <span className="hidden md:inline">About Postcards.my</span>
+          </button>
         </div>
-        
-        <div className="block md:hidden">
-          <Stepper 
-            steps={steps.map(step => ({
-              ...step,
-              name: '', // Remove names for mobile view
-              status: step.id === currentStep 
-                ? 'current'
-                : step.id < currentStep 
-                  ? 'complete' 
-                  : 'upcoming'
-            }))} 
-            variant="simple"
-          />
-          
-          {/* Title only on mobile */}
-          <div className="text-center mt-4">
-            <h1 className="text-xl font-bold">
-              {currentStep === 1 ? 'Design the front' : 
+      </header>
+
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-72px)]">
+        {/* Left Panel - Controls */}
+        <div className="w-full lg:w-[500px] order-2 lg:order-1 bg-white p-6 lg:h-[calc(100vh-72px)] lg:sticky lg:top-[72px] overflow-y-auto">
+          {/* Only show on desktop - Back button removed */}
+          <div className="mb-6">
+            <h1 className="text-3xl font-medium text-[#222222] font-['PP_Editorial_New']">
+              {currentStep === 1 ? 'Customize your postcard' : 
                currentStep === 2 ? 'Write your message' : 
                'Preview & Download'}
             </h1>
           </div>
-        </div>
-      </div>
-      
-      <div className="flex flex-col lg:flex-row h-full min-h-[calc(100vh-100px)]">
-        {/* Mobile View Controls - Only visible on small screens */}
-        <div className="lg:hidden mb-4 px-4">
-          <div className="flex items-center justify-between">
-            {/* Back button removed */}
-            
-            {/* Preview button removed */}
-          </div>
-          
-          {/* Remove the mobile title since we've moved it to below the stepper */}
-        </div>
-        
-        {/* Left Panel - Controls */}
-        <div className="w-full lg:w-1/4 xl:w-1/3 order-2 lg:order-1 bg-white p-4 lg:h-full lg:min-h-[calc(100vh-100px)]">
-          <div className="lg:sticky lg:top-8">
-            {/* Only show on desktop - Back button removed */}
-            <div className="hidden lg:block">
-              <h1 className="h3 mb-4">
-                {currentStep === 1 ? 'Customize your postcard' : 
-                 currentStep === 2 ? 'Write your message' : 
-                 'Preview & Download'}
-              </h1>
-            </div>
+
+          {/* Remove Mobile stepper */}
 
             {currentStep === 1 && (
               <>
-                <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
+              <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
 
                 {/* Picture Selection */}
                 {activeTab === 'picture' && (
-                  <div>
-                    <div className="flex justify-between items-center mb-4">
-                      <h2>Select a picture</h2>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {/* Upload Image Button */}
-                      <button
-                        className={`aspect-[4/3] rounded-lg border-2 overflow-hidden relative ${
-                          !uploadedImage ? 'border-gray-200' : 
-                          selectedImage?.id === 'uploaded' ? 'border-blue-500' : 'border-gray-200'
-                        }`}
-                        onClick={() => {
-                          if (uploadedImage) {
-                            setSelectedImage(uploadedImage);
-                          } else {
-                            document.getElementById('image-upload-input').click();
-                          }
-                        }}
-                      >
-                        {uploadedImage ? (
-                          <>
-                            <div className="relative w-full h-full">
-                              <Image
-                                src={uploadedImage.src}
-                                alt={uploadedImage.alt}
-                                fill
-                                className="object-cover"
-                                sizes="(max-width: 200px) 100vw, 200px"
-                              />
-                              <div 
-                                className="absolute top-1 right-1 p-1 bg-white rounded-full shadow-md hover:bg-gray-100 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  document.getElementById('image-upload-input').click();
-                                }}
-                              >
-                                <Upload size={14} />
-                              </div>
+                <div className="mt-6">
+                  <h2 className="text-lg font-medium mb-4">Select a picture</h2>
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Upload Image Button */}
+                    <button
+                      className={`aspect-[4/3] rounded-lg border-2 overflow-hidden relative ${
+                        !uploadedImage ? 'border-gray-300' : 
+                        selectedImage?.id === 'uploaded' ? 'border-blue-500' : 'border-gray-300'
+                      }`}
+                      onClick={() => {
+                        if (uploadedImage) {
+                          setSelectedImage(uploadedImage);
+                        } else {
+                          document.getElementById('image-upload-input').click();
+                        }
+                      }}
+                    >
+                      {uploadedImage ? (
+                        <>
+                          <div className="relative w-full h-full">
+                            <Image
+                              src={uploadedImage.src}
+                              alt={uploadedImage.alt}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 200px) 100vw, 200px"
+                            />
+                            <div 
+                              className="absolute top-1 right-1 p-1 bg-white rounded-full shadow-md hover:bg-gray-100 cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                document.getElementById('image-upload-input').click();
+                              }}
+                            >
+                              <Upload size={14} />
                             </div>
-                          </>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center h-full bg-[#FFF8E7]">
-                            <Upload size={24} className="mb-2" />
-                            <span className="text-xs text-center">Upload image</span>
                           </div>
-                        )}
-                      </button>
-                      
-                      {/* Hidden file input */}
-                      <input
-                        id="image-upload-input"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                      
-                      {/* Sample Images */}
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full bg-[#FFFBF2]">
+                          <Upload size={24} className="mb-2" />
+                          <span className="text-xs text-center">Upload image</span>
+                        </div>
+                      )}
+                    </button>
+                    
+                    {/* Hidden file input */}
+                        <input
+                      id="image-upload-input"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    
+                    {/* Sample Images */}
                       {sampleImages.map((image) => (
                         <button
                           key={image.id}
                           className={`aspect-[4/3] rounded-lg border-2 overflow-hidden ${
                             selectedImage?.src === image.src 
                               ? 'border-blue-500' 
-                              : 'border-gray-200'
+                            : 'border-gray-300'
                           }`}
                           onClick={() => setSelectedImage(image)}
                         >
@@ -1020,236 +982,234 @@ export default function TestPage() {
                 )}
 
                 {/* Stickers Selection */}
-                {activeTab === 'stickers' && frontStickerPickerUI}
+              {activeTab === 'stickers' && frontStickerPickerUI}
               </>
             )}
 
             {currentStep === 2 && (
               <div>
-                <Tabs tabs={backTabs} activeTab={activeBackTab} onTabChange={handleBackTabChange} />
-                
-                {activeBackTab === 'message' && (
-                  <>
-                    <RangeSlider 
-                      value={fontSize}
-                      onChange={setFontSize}
-                      min={16}
-                      max={36}
-                      step={2}
-                      label="Font Size"
-                      unit="px"
-                    />
-                    <div className="mb-4">
-                      <select
-                        value={selectedFont}
-                        onChange={(e) => setSelectedFont(e.target.value)}
-                        className="w-full p-2 rounded-lg border border-gray-200 focus:border-black focus:ring-1 focus:ring-black"
-                      >
-                        {fontOptions.map(font => (
-                          <option key={font.value} value={font.value}>
-                            {font.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="relative">
-                      <textarea 
-                        value={message}
-                        onChange={(e) => {
-                          // Only update if we're under the character limit
-                          if (e.target.value.length <= 600) {
-                            setMessage(e.target.value);
-                          }
-                        }}
-                        placeholder="Write your message here..."
-                        className={`w-full h-48 p-4 rounded-lg border ${
-                          textOverflow ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-gray-200 focus:border-black focus:ring-1 focus:ring-black'
-                        }`}
-                        maxLength={600} // Fixed character limit
-                      ></textarea>
-                      <div className="mt-2 flex justify-between text-sm">
-                        <div className={message.length >= 600 ? 'text-red-500' : 'text-gray-500'}>
-                          {message.length} / 600 characters
-                        </div>
-                        {message.length >= 600 && (
-                          <div className="text-red-500">
-                            Character limit reached
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
-                
-                {activeBackTab === 'stamp' && (
-                  <div className="mt-4">
-                    <h3 className="text-lg font-medium mb-3">Choose a Stamp</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Placeholder for stamp options */}
-                      <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
-                        <div className="text-gray-400">Stamp 1</div>
-                      </button>
-                      <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
-                        <div className="text-gray-400">Stamp 2</div>
-                      </button>
-                      <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
-                        <div className="text-gray-400">Stamp 3</div>
-                      </button>
-                      <button className="aspect-square border border-gray-200 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
-                        <div className="text-gray-400">Stamp 4</div>
-                      </button>
-                    </div>
-                  </div>
-                )}
-                
-                {activeBackTab === 'stickers' && backStickerPickerUI}
-              </div>
-            )}
-
-            {currentStep === 3 && (
-              <div>
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <h3 className="font-medium">Download Format</h3>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                        <input 
-                          type="radio" 
-                          name="downloadFormat" 
-                          value="separate" 
-                          checked={downloadFormat === 'separate'}
-                          onChange={() => setDownloadFormat('separate')}
-                          className="w-4 h-4 text-black focus:ring-black"
-                        />
-                        <div>
-                          <div className="font-medium">Separate Images</div>
-                          <div className="text-sm text-gray-500">Download front and back as separate postcard-sized images</div>
-                        </div>
-                      </label>
-                      
-                      <label className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                        <input 
-                          type="radio" 
-                          name="downloadFormat" 
-                          value="a4" 
-                          checked={downloadFormat === 'a4'}
-                          onChange={() => setDownloadFormat('a4')}
-                          className="w-4 h-4 text-black focus:ring-black"
-                        />
-                        <div>
-                          <div className="font-medium">A4 Print Layout</div>
-                          <div className="text-sm text-gray-500">Download both sides on a single A4 page for easy printing</div>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                  
-                  <button 
-                    className="w-full py-3 px-4 rounded-lg bg-black text-white hover:bg-black/90 flex items-center justify-center gap-2"
-                    onClick={handleDownloadPostcard}
-                    disabled={isDownloading}
+              <Tabs tabs={backTabs} activeTab={activeBackTab} onTabChange={handleBackTabChange} />
+              
+              {activeBackTab === 'message' && (
+                <>
+                  <RangeSlider 
+                    value={fontSize}
+                    onChange={setFontSize}
+                    min={16}
+                    max={36}
+                    step={2}
+                    label="Font Size"
+                    unit="px"
+                  />
+                <div className="mb-4">
+                  <select
+                    value={selectedFont}
+                    onChange={(e) => setSelectedFont(e.target.value)}
+                      className="w-full p-2 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black"
                   >
-                    {isDownloading ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>Preparing Download...</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
-                          <path d="M224,152v56a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V152a8,8,0,0,1,16,0v56H208V152a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,132.69V40a8,8,0,0,0-16,0v92.69L93.66,106.34a8,8,0,0,0-11.32,11.32Z"></path>
-                        </svg>
-                        <span>Download Postcard</span>
-                      </>
-                    )}
-                  </button>
-                  
-                  <div className="flex gap-2">
-                    <button 
-                      className="flex-1 py-3 px-4 rounded-lg border border-gray-300 hover:bg-gray-50"
-                      onClick={() => handleStepChange(2)}
-                    >
-                      Edit Back
+                    {fontOptions.map(font => (
+                      <option key={font.value} value={font.value}>
+                        {font.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                  <div className="relative">
+                <textarea 
+                  value={message}
+                      onChange={(e) => {
+                        // Only update if we're under the character limit
+                        if (e.target.value.length <= 600) {
+                          setMessage(e.target.value);
+                        }
+                      }}
+                      placeholder="Write your message here..."
+                      className={`w-full h-48 p-4 rounded-lg border ${
+                        textOverflow ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-gray-300 focus:border-black focus:ring-1 focus:ring-black'
+                      }`}
+                      maxLength={600} // Fixed character limit
+                    ></textarea>
+                    <div className="mt-2 flex justify-between text-sm">
+                      <div className={message.length >= 600 ? 'text-red-500' : 'text-gray-500'}>
+                        {message.length} / 600 characters
+                      </div>
+                      {message.length >= 600 && (
+                        <div className="text-red-500">
+                          Character limit reached
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {activeBackTab === 'stamp' && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-medium mb-3">Choose a Stamp</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Placeholder for stamp options */}
+                    <button className="aspect-square border border-gray-300 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
+                      <div className="text-gray-400">Stamp 1</div>
                     </button>
-                    <button 
-                      className="flex-1 py-3 px-4 rounded-lg border border-gray-300 hover:bg-gray-50"
-                      onClick={() => handleStepChange(1)}
-                    >
-                      Edit Front
+                    <button className="aspect-square border border-gray-300 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
+                      <div className="text-gray-400">Stamp 2</div>
+                    </button>
+                    <button className="aspect-square border border-gray-300 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
+                      <div className="text-gray-400">Stamp 3</div>
+                    </button>
+                    <button className="aspect-square border border-gray-300 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
+                      <div className="text-gray-400">Stamp 4</div>
                     </button>
                   </div>
                 </div>
+              )}
+              
+              {activeBackTab === 'stickers' && backStickerPickerUI}
+            </div>
+          )}
 
-                {/* Download status notification */}
-                {downloadStatus && (
-                  <div className={`mt-4 p-3 rounded-lg ${
-                    downloadStatus.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0">
-                        {downloadStatus.type === 'success' ? (
-                          <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                        ) : (
-                          <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                          </svg>
-                        )}
+          {currentStep === 3 && (
+            <div>
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <h3 className="font-medium">Download Format</h3>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input 
+                        type="radio" 
+                        name="downloadFormat" 
+                        value="separate" 
+                        checked={downloadFormat === 'separate'}
+                        onChange={() => setDownloadFormat('separate')}
+                        className="w-4 h-4 text-black focus:ring-black"
+                      />
+                      <div>
+                        <div className="font-medium">Separate Images</div>
+                        <div className="text-sm text-gray-500">Download front and back as separate postcard-sized images</div>
+              </div>
+                    </label>
+                    
+                    <label className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input 
+                        type="radio" 
+                        name="downloadFormat" 
+                        value="a4" 
+                        checked={downloadFormat === 'a4'}
+                        onChange={() => setDownloadFormat('a4')}
+                        className="w-4 h-4 text-black focus:ring-black"
+                      />
+                      <div>
+                        <div className="font-medium">A4 Print Layout</div>
+                        <div className="text-sm text-gray-500">Download both sides on a single A4 page for easy printing</div>
                       </div>
-                      <div className="ml-3">
-                        <p className="text-sm">{downloadStatus.message}</p>
-                      </div>
-                      <div className="ml-auto pl-3">
-                        <div className="-mx-1.5 -my-1.5">
-                          <button
-                            onClick={() => setDownloadStatus(null)}
-                            className={`inline-flex rounded-md p-1.5 ${
-                              downloadStatus.type === 'success' ? 'text-green-500 hover:bg-green-200' : 'text-red-500 hover:bg-red-200'
-                            }`}
-                          >
-                            <span className="sr-only">Dismiss</span>
-                            <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                        </div>
+                    </label>
+                  </div>
+                </div>
+                
+                <button 
+                  className="w-full py-3 px-4 rounded-lg bg-black text-white hover:bg-black/90 flex items-center justify-center gap-2"
+                  onClick={handleDownloadPostcard}
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Preparing Download...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M224,152v56a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V152a8,8,0,0,1,16,0v56H208V152a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,132.69V40a8,8,0,0,0-16,0v92.69L93.66,106.34a8,8,0,0,0-11.32,11.32Z"></path>
+                      </svg>
+                      <span>Download Postcard</span>
+                    </>
+                  )}
+                </button>
+                
+                <div className="flex gap-2">
+                <button 
+                  className="flex-1 py-3 px-4 rounded-lg border border-gray-300 hover:bg-gray-50"
+                    onClick={() => handleStepChange(2)}
+                >
+                    Edit Back
+                </button>
+                  <button 
+                    className="flex-1 py-3 px-4 rounded-lg border border-gray-300 hover:bg-gray-50"
+                    onClick={() => handleStepChange(1)}
+                  >
+                    Edit Front
+                  </button>
+                </div>
+              </div>
+
+              {/* Download status notification */}
+              {downloadStatus && (
+                <div className={`mt-4 p-3 rounded-lg ${
+                  downloadStatus.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      {downloadStatus.type === 'success' ? (
+                        <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm">{downloadStatus.message}</p>
+                    </div>
+                    <div className="ml-auto pl-3">
+                      <div className="-mx-1.5 -my-1.5">
+                        <button
+                          onClick={() => setDownloadStatus(null)}
+                          className={`inline-flex rounded-md p-1.5 ${
+                            downloadStatus.type === 'success' ? 'text-green-500 hover:bg-green-200' : 'text-red-500 hover:bg-red-200'
+                          }`}
+                        >
+                          <span className="sr-only">Dismiss</span>
+                          <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
+          )}
 
-            {/* Navigation Buttons - Only show for steps 1 and 2 on desktop */}
-            {currentStep < 3 && (
-              <div className="hidden lg:flex gap-4 mt-8">
-                {currentStep > 1 && (
-                  <button 
-                    onClick={() => handleStepChange(currentStep - 1)}
-                    className="flex-1 py-3 px-4 rounded-lg border border-gray-300 hover:bg-gray-50"
-                  >
-                    Previous
-                  </button>
-                )}
-                {currentStep < 3 && (
-                  <button 
-                    onClick={() => handleStepChange(currentStep + 1)}
-                    className="flex-1 py-3 px-4 rounded-lg bg-black text-white hover:bg-black/90"
-                  >
-                    Next
-                  </button>
-                )}
-              </div>
-            )}
+          {/* Navigation Buttons - Only show on desktop */}
+              {currentStep < 3 && (
+            <div className="mt-8 hidden lg:block">
+                <button 
+                  onClick={() => handleStepChange(currentStep + 1)}
+                className="w-full py-3 px-4 rounded-lg bg-black text-white hover:bg-black/90"
+              >
+                {currentStep === 1 ? 'Next - Edit back page' : 'Next - Preview & Download'}
+              </button>
+              
+              {currentStep > 1 && (
+                <button 
+                  onClick={() => handleStepChange(currentStep - 1)}
+                  className="w-full mt-3 py-3 px-4 rounded-lg border border-gray-300 hover:bg-gray-50"
+                >
+                  Back to front page
+                </button>
+              )}
           </div>
+        )}
         </div>
 
         {/* Right Panel - Postcard Preview */}
-        <div id="postcard-preview" className="w-full lg:w-3/4 xl:w-2/3 flex items-center justify-center order-1 lg:order-2 mb-8 lg:mb-0 p-4 md:p-8 lg:h-full lg:min-h-[calc(100vh-100px)]">
+        <div id="postcard-preview" className="w-full lg:flex-1 flex items-start justify-center order-1 lg:order-2 p-4 md:p-8 bg-[#FFDA7B] lg:h-[calc(100vh-72px)] overflow-y-auto">
           <div className="relative w-full max-w-[800px]">
             {currentStep === 3 ? (
               // Preview mode - show both sides
@@ -1297,17 +1257,17 @@ export default function TestPage() {
               </div>
             ) : (
               // Normal editing mode
-              <div className="w-full aspect-[879/591]">
-                {currentStep === 1 ? (
-                  // Front Side
+            <div className="w-full aspect-[879/591]">
+              {currentStep === 1 ? (
+                // Front Side
                   <div 
                     className="w-full h-full bg-white relative shadow-lg rounded-lg overflow-hidden"
                     id="front-edit-container"
                   >
                     <div className="w-full h-full p-4 box-border">
-                      <img
-                        src={selectedImage?.src || defaultImage.src}
-                        alt={selectedImage?.alt || defaultImage.alt}
+                  <img
+                    src={selectedImage?.src || defaultImage.src}
+                    alt={selectedImage?.alt || defaultImage.alt}
                         className="w-full h-full object-cover pointer-events-none"
                         crossOrigin="anonymous"
                       />
@@ -1325,20 +1285,20 @@ export default function TestPage() {
                         className="w-full h-full absolute inset-0 pointer-events-none"
                       ></canvas>
                       {frontCanvasElements}
-                    </div>
                   </div>
-                ) : (
-                  // Back Side
+                </div>
+              ) : (
+                // Back Side
                   <div 
                     className="w-full h-full bg-white relative shadow-lg rounded-lg overflow-hidden"
                   >
-                    <div className="w-full h-full relative">
-                      <canvas
-                        ref={staticCanvasRef}
-                        width="879"
-                        height="591"
-                        className="w-full h-full"
-                      ></canvas>
+                  <div className="w-full h-full relative">
+                    <canvas
+                      ref={staticCanvasRef}
+                      width="879"
+                      height="591"
+                      className="w-full h-full"
+                    ></canvas>
                       <div 
                         className="absolute inset-0"
                         onClick={isBackPasteMode ? handleBackCanvasClick : undefined}
@@ -1353,10 +1313,10 @@ export default function TestPage() {
                         ></canvas>
                         {backCanvasElements}
                       </div>
-                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+            </div>
             )}
           </div>
         </div>
@@ -1364,23 +1324,21 @@ export default function TestPage() {
         {/* Mobile Navigation - Fixed at bottom */}
         {currentStep < 3 && (
           <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 lg:hidden z-10">
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               {currentStep > 1 && (
                 <button 
                   onClick={() => handleStepChange(currentStep - 1)}
                   className="flex-1 py-3 px-4 rounded-lg border border-gray-300 hover:bg-gray-50"
                 >
-                  Previous
+                  Back to front page
                 </button>
               )}
-              {currentStep < 3 && (
-                <button 
-                  onClick={() => handleStepChange(currentStep + 1)}
-                  className="flex-1 py-3 px-4 rounded-lg bg-black text-white hover:bg-black/90"
-                >
-                  Next
-                </button>
-              )}
+              <button 
+                onClick={() => handleStepChange(currentStep + 1)}
+                className={`${currentStep > 1 ? 'flex-1' : 'w-full'} py-3 px-4 rounded-lg bg-black text-white hover:bg-black/90`}
+              >
+                {currentStep === 1 ? 'Next - Edit back page' : 'Next - Preview & Download'}
+              </button>
             </div>
           </div>
         )}
