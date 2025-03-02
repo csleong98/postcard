@@ -142,14 +142,17 @@ body {
 .perspective {
   perspective: 1100px;
 }
-.transform-style-preserve-3d {
+
+.preserve-3d {
   transform-style: preserve-3d;
 }
-.rotate-y-180 {
-  transform: rotateY(180deg);
-}
+
 .backface-hidden {
   backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -162,3 +165,43 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Mobile-specific styles */
+@media (max-width: 1023px) {
+  /* Add padding at the bottom to account for fixed navigation */
+  body {
+    padding-bottom: 80px;
+  }
+  
+  /* Improve touch targets for mobile */
+  button, 
+  [role="button"],
+  input[type="radio"],
+  input[type="checkbox"] {
+    min-height: 44px;
+  }
+  
+  /* Ensure text is readable on small screens */
+  .text-sm {
+    font-size: 14px;
+  }
+  
+  /* Improve form elements on mobile */
+  textarea, 
+  select, 
+  input {
+    font-size: 16px !important; /* Prevent iOS zoom on focus */
+  }
+}
+
+/* Smooth scrolling for the whole page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Improve mobile canvas interaction */
+canvas {
+  touch-action: none; /* Prevents browser handling of touch events like pinch-zoom */
+}
+
+/* Remove the sticker visibility control classes */
