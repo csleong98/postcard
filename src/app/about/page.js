@@ -13,10 +13,14 @@ export default function AboutPage() {
           Postcards
         </Link>
         <div className="flex items-center gap-4 absolute right-6">
-          <button className="flex items-center gap-1 hover:text-gray-300">
+          {/* <button className="flex items-center gap-1 hover:text-gray-300">
             <ChatCircle size={24} weight="fill" />
             <span className="hidden md:inline">Give feedback</span>
-          </button>
+          </button> */}
+          <a href="https://tally.so/r/wAjk9D" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-gray-300">
+            <ChatCircle size={24} weight="fill" />
+            <span className="hidden md:inline">Give feedback</span>
+          </a>
           <Link href="/about" className="flex items-center gap-1 hover:text-gray-300">
             <Smiley size={24} weight="fill" />
             <span className="hidden md:inline">About Postcards.my</span>
@@ -98,7 +102,7 @@ export default function AboutPage() {
       {/* Footer */}
       <footer className="bg-[#FFF6E9] py-8 border-t border-gray-200">
         <div className="max-w-6xl mx-auto px-4 text-center">
-          <p className="text-sm text-gray-500">Created with ❤️ by Chee Seng Leong • 2023</p>
+          <p className="text-sm text-gray-500">Created with ❤️ by Chee Seng Leong • 2025</p>
         </div>
       </footer>
     </div>

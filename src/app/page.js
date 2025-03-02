@@ -540,6 +540,23 @@ export default function TestPage() {
         
         console.log('Character limit set to:', fixedCharLimit);
       }
+      
+      // Force update of mobile view canvas if we're in step 3
+      if (currentStep === 3) {
+        // Use setTimeout to ensure this runs after the current render cycle
+        setTimeout(() => {
+          const mobileCanvases = document.querySelectorAll('.preview-back-container canvas');
+          mobileCanvases.forEach(mobileCanvas => {
+            if (mobileCanvas !== staticCanvasRef.current) {
+              const mobileCtx = mobileCanvas.getContext('2d');
+              if (mobileCtx) {
+                mobileCtx.clearRect(0, 0, mobileCanvas.width, mobileCanvas.height);
+                mobileCtx.drawImage(staticCanvasRef.current, 0, 0);
+              }
+            }
+          });
+        }, 50);
+      }
     }
   }, [currentStep, message, selectedFont, textColor, fontSize]);
 
@@ -562,6 +579,27 @@ export default function TestPage() {
     const timeoutId = setTimeout(checkOverflow, 100);
     return () => clearTimeout(timeoutId);
   }, [message]);
+
+  // Add effect to update mobile view when switching to step 3
+  useEffect(() => {
+    if (currentStep === 3) {
+      // Use a slightly longer timeout to ensure the static canvas has been fully rendered
+      const timeoutId = setTimeout(() => {
+        const mobileCanvases = document.querySelectorAll('.md\\:hidden .preview-back-container canvas');
+        if (staticCanvasRef.current && mobileCanvases.length > 0) {
+          mobileCanvases.forEach(mobileCanvas => {
+            const mobileCtx = mobileCanvas.getContext('2d');
+            if (mobileCtx) {
+              mobileCtx.clearRect(0, 0, mobileCanvas.width, mobileCanvas.height);
+              mobileCtx.drawImage(staticCanvasRef.current, 0, 0);
+            }
+          });
+        }
+      }, 200);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [currentStep, message, selectedFont, fontSize, textColor]);
 
   // Function to handle postcard download
   const handleDownloadPostcard = () => {
@@ -1296,7 +1334,7 @@ export default function TestPage() {
                 {/* Mobile view - horizontal scrolling */}
                 <div className="md:hidden w-full">
                   <div className="flex flex-nowrap space-x-8 overflow-x-auto pb-4 w-full" style={{WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none', overflowY: 'hidden'}}>
-                    <div className="w-[300px] shrink-0">
+                    <div className="w-[calc(100vw-48px)] shrink-0">
                       <div className="w-full aspect-[879/591] bg-white relative shadow-lg rounded-lg overflow-hidden preview-front-container" id="front-postcard-container">
                         <div className="w-full h-full p-4 box-border">
                           <img
@@ -1317,13 +1355,20 @@ export default function TestPage() {
                       </div>
                     </div>
                     
-                    <div className="w-[300px] shrink-0">
+                    <div className="w-[calc(100vw-48px)] shrink-0">
                       <div className="w-full aspect-[879/591] bg-white relative shadow-lg rounded-lg overflow-hidden preview-back-container">
+                        {/* Use a separate canvas reference for mobile to ensure it renders properly */}
                         <canvas
-                          ref={staticCanvasRef}
+                          className="w-full h-full absolute inset-0"
                           width="879"
                           height="591"
-                          className="w-full h-full"
+                          ref={(el) => {
+                            // Clone the static canvas content to this canvas when it's available
+                            if (el && staticCanvasRef.current) {
+                              const ctx = el.getContext('2d');
+                              ctx.drawImage(staticCanvasRef.current, 0, 0);
+                            }
+                          }}
                         ></canvas>
                         <div className="absolute inset-0">
                           <canvas
@@ -1385,7 +1430,7 @@ export default function TestPage() {
               </div>
             ) : (
               // Normal editing mode - steps 1 and 2
-              <div className="w-full aspect-[879/591]">
+              <div className="w-full aspect-[879/591] md:max-w-none mx-auto">
                 {currentStep === 1 ? (
                   // Front Side
                   <div 
@@ -1458,14 +1503,14 @@ export default function TestPage() {
                   onClick={() => handleStepChange(currentStep - 1)}
                   className="flex-1 py-3 px-4 rounded-lg border border-gray-300 hover:bg-gray-50"
                 >
-                  Back to front page
+                  Back
                 </button>
               )}
               <button 
                 onClick={() => handleStepChange(currentStep + 1)}
                 className={`${currentStep > 1 ? 'flex-1' : 'w-full'} py-3 px-4 rounded-lg bg-black text-white hover:bg-black/90`}
               >
-                {currentStep === 1 ? 'Next - Edit back page' : 'Next - Preview & Download'}
+                {currentStep === 1 ? 'Next - Edit back page' : 'Preview'}
               </button>
             </div>
           </div>
