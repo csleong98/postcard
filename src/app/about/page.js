@@ -77,16 +77,16 @@ export default function AboutPage() {
               
               <h2 className="text-2xl font-medium mt-8 mb-4 font-['PP_Editorial_New']">Say hello</h2>
               <div className="flex space-x-4 mt-4">
-                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow">
+                <a href="https://instagram.com/csleong98" target="_blank" rel="noopener noreferrer" className="p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow">
                   <InstagramLogo size={24} weight="fill" />
                 </a>
-                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow">
+                <a href="https://linkedin.com/csleong98" target="_blank" rel="noopener noreferrer" className="p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow">
                   <LinkedinLogo size={24} weight="fill" />
                 </a>
-                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow">
+                <a href="https://twitter.com/csleong98" target="_blank" rel="noopener noreferrer" className="p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow">
                   <TwitterLogo size={24} weight="fill" />
                 </a>
-                <a href="mailto:hello@postcards.my" className="p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow">
+                <a href="mailto:macintoshleong@gmail.com" className="p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow">
                   <EnvelopeSimple size={24} weight="fill" />
                 </a>
               </div>
