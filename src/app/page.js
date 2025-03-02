@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Image from "next/image"
 import Link from "next/link"
-import { Eye, Upload, Question, ChatCircle } from "@phosphor-icons/react"
+import { Eye, Upload, Smiley, ChatCircle } from "@phosphor-icons/react"
 import { Tabs } from './components/common/Tabs'
 import { Stepper } from './components/common/Stepper'
 import { StickersTab } from './components/stickers'
@@ -909,10 +909,10 @@ export default function TestPage() {
             <ChatCircle size={24} weight="fill" />
             <span className="hidden md:inline">Give feedback</span>
           </button>
-          <button className="flex items-center gap-1 hover:text-gray-300">
-            <Question size={24} weight="fill" />
+          <Link href="/about" className="flex items-center gap-1 hover:text-gray-300">
+            <Smiley size={24} weight="fill" />
             <span className="hidden md:inline">About Postcards.my</span>
-          </button>
+          </Link>
         </div>
       </header>
 
