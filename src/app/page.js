@@ -9,6 +9,17 @@ import { Stepper } from './components/common/Stepper'
 import { StickersTab } from './components/stickers'
 import RangeSlider from './components/RangeSlider'
 import html2canvas from 'html2canvas'
+import mixpanel from 'mixpanel-browser'
+
+// Initialize Mixpanel
+if (typeof window !== 'undefined') {
+  // Use environment variable for Mixpanel token
+  const MIXPANEL_TOKEN = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN || 'YOUR_MIXPANEL_TOKEN';
+  mixpanel.init(MIXPANEL_TOKEN, { 
+    debug: process.env.NODE_ENV !== 'production',
+    ignore_dnt: true // Add this to ignore the "Do Not Track" browser setting
+  });
+}
 
 const tabs = [
   { id: 'picture', label: 'Picture' },
@@ -214,6 +225,10 @@ export default function TestPage() {
       resetBackPasteMode()
     }
   }
+
+  const handleImageSelect = (image) => {
+    setSelectedImage(image);
+  };
 
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
@@ -553,6 +568,13 @@ export default function TestPage() {
     setIsDownloading(true);
     setDownloadStatus(null);
     
+    // Track download with Mixpanel
+    if (typeof window !== 'undefined') {
+      mixpanel.track('Download Postcard', {
+        format: downloadFormat
+      });
+    }
+    
     // Simple approach that will definitely work
     const downloadPostcardImages = async () => {
       try {
@@ -786,6 +808,14 @@ export default function TestPage() {
         }
       } catch (error) {
         console.error('Download error:', error);
+        
+        // Track download error with Mixpanel
+        if (typeof window !== 'undefined') {
+          mixpanel.track('Download Error', {
+            errorMessage: error.message
+          });
+        }
+        
         setIsDownloading(false);
         setDownloadStatus({
           type: 'error',
@@ -795,6 +825,19 @@ export default function TestPage() {
     };
     
     downloadPostcardImages();
+  };
+
+  // Update the message change handler to track with Mixpanel
+  const handleMessageChange = (e) => {
+    const newMessage = e.target.value;
+    if (newMessage.length <= 600) {
+      setMessage(newMessage);
+    }
+  };
+
+  // Update the download format selection to track with Mixpanel
+  const handleDownloadFormatChange = (format) => {
+    setDownloadFormat(format);
   };
 
   // Front side tabs content
@@ -807,7 +850,7 @@ export default function TestPage() {
             <textarea
               value={message}
               onChange={handleMessageChange}
-              maxLength={fixedCharLimit}
+              maxLength={estimatedCharLimit}
               className="w-full h-40 p-3 border rounded resize-none"
               placeholder="Write your message here..."
               style={{
@@ -816,8 +859,8 @@ export default function TestPage() {
                 fontFamily: selectedFont
               }}
             ></textarea>
-            <div className={`text-sm mt-2 ${remainingChars <= 50 ? 'text-red-500' : 'text-gray-500'}`}>
-              {remainingChars} characters remaining
+            <div className={`text-sm mt-2 ${estimatedCharLimit - message.length <= 50 ? 'text-red-500' : 'text-gray-500'}`}>
+              {estimatedCharLimit - message.length} characters remaining
             </div>
           </div>
         );
@@ -1116,13 +1159,13 @@ export default function TestPage() {
                         name="downloadFormat" 
                         value="separate" 
                         checked={downloadFormat === 'separate'}
-                        onChange={() => setDownloadFormat('separate')}
+                        onChange={() => handleDownloadFormatChange('separate')}
                         className="w-4 h-4 text-black focus:ring-black"
                       />
                       <div>
                         <div className="font-medium">Separate Images</div>
                         <div className="text-sm text-gray-500">Download front and back as separate postcard-sized images</div>
-              </div>
+                      </div>
                     </label>
                     
                     <label className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
@@ -1131,7 +1174,7 @@ export default function TestPage() {
                         name="downloadFormat" 
                         value="a4" 
                         checked={downloadFormat === 'a4'}
-                        onChange={() => setDownloadFormat('a4')}
+                        onChange={() => handleDownloadFormatChange('a4')}
                         className="w-4 h-4 text-black focus:ring-black"
                       />
                       <div>

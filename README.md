@@ -20,6 +20,22 @@ You can start editing the page by modifying `app/page.js`. The page auto-updates
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Analytics
+
+This project uses [Mixpanel](https://mixpanel.com) for tracking user interactions. To set up Mixpanel:
+
+1. Create a `.env.local` file in the root directory if it doesn't exist
+2. Add your Mixpanel project token (never commit this file to version control):
+```
+NEXT_PUBLIC_MIXPANEL_TOKEN=your_mixpanel_project_token_here
+```
+
+> **Security Note**: Never commit your actual Mixpanel token to version control. The `.env.local` file should be included in your `.gitignore` file.
+
+Currently, the application tracks:
+- Postcard downloads (both formats)
+- Download errors
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
