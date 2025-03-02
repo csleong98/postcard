@@ -98,6 +98,36 @@ const compressImage = (base64String) => {
   });
 };
 
+// Add the prepareForExport function
+const prepareForExport = () => {
+  // Disable all console logs in browser environment
+  if (typeof window !== 'undefined') {
+    // Store original console methods
+    const originalConsole = {
+      log: console.log,
+      error: console.error,
+      warn: console.warn,
+      debug: console.debug
+    };
+    
+    // Replace with empty functions
+    console.log = () => {};
+    console.error = () => {};
+    console.warn = () => {};
+    console.debug = () => {};
+    
+    // Return function to restore console if needed
+    return () => {
+      console.log = originalConsole.log;
+      console.error = originalConsole.error;
+      console.warn = originalConsole.warn;
+      console.debug = originalConsole.debug;
+    };
+  }
+  
+  return () => {}; // Return empty function if not in browser
+};
+
 // Add this at the top with other constants
 const fontOptions = [
   { name: 'Homemade Apple', value: 'Homemade Apple' },
@@ -303,7 +333,7 @@ export default function TestPage() {
         });
         
         // Draw text area boundary for debugging (comment out in production)
-        const debugMode = true; // Set to false to hide the boundary
+        const debugMode = false; // Set to false to hide the boundary
         if (debugMode) {
           const originalStrokeStyle = ctx.strokeStyle;
           ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
@@ -520,149 +550,148 @@ export default function TestPage() {
 
   // Function to handle postcard download
   const handleDownloadPostcard = () => {
-    setIsDownloading(true); // Set loading state to true
-    setDownloadStatus(null); // Reset download status
+    setIsDownloading(true);
+    setDownloadStatus(null);
     
+    // Simple approach that will definitely work
     const downloadPostcardImages = async () => {
       try {
-        // Debug function to visualize canvas
-        const debugCanvas = (canvas, name) => {
-          // Create a debug container
-          const debugContainer = document.createElement('div');
-          debugContainer.style.position = 'fixed';
-          debugContainer.style.top = '20px';
-          debugContainer.style.right = '20px';
-          debugContainer.style.zIndex = '9999';
-          debugContainer.style.background = 'white';
-          debugContainer.style.padding = '10px';
-          debugContainer.style.border = '2px solid black';
-          debugContainer.style.borderRadius = '5px';
-          debugContainer.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
-          
-          // Add title
-          const title = document.createElement('div');
-          title.textContent = `Debug: ${name}`;
-          title.style.marginBottom = '5px';
-          title.style.fontWeight = 'bold';
-          debugContainer.appendChild(title);
-          
-          // Add canvas
-          const scaledCanvas = document.createElement('canvas');
-          scaledCanvas.width = canvas.width / 4;
-          scaledCanvas.height = canvas.height / 4;
-          const ctx = scaledCanvas.getContext('2d');
-          ctx.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
-          debugContainer.appendChild(scaledCanvas);
-          
-          // Add close button
-          const closeButton = document.createElement('button');
-          closeButton.textContent = 'Close';
-          closeButton.style.marginTop = '5px';
-          closeButton.style.padding = '5px 10px';
-          closeButton.onclick = () => document.body.removeChild(debugContainer);
-          debugContainer.appendChild(closeButton);
-          
-          document.body.appendChild(debugContainer);
-        };
-
-        // Hide the labels before capturing
-        const labels = document.querySelectorAll('.download-hide-label');
-        labels.forEach(label => {
-          label.style.display = 'none';
-        });
+        // Disable console logs
+        const restoreConsole = prepareForExport();
         
-        // Get front side container
-        const frontContainer = document.querySelector('.preview-front-container');
+        // Get the actual DOM elements that are visible on screen
+        const frontPostcardElement = document.querySelector('#front-postcard-container') || 
+                                    document.querySelector('.preview-front-container');
+        const backPostcardElement = document.querySelector('.preview-back-container');
         
-        // Get back side container
-        const backContainer = document.querySelector('.preview-back-container');
-        
-        if (!frontContainer || !backContainer) {
-          throw new Error('Could not find postcard containers');
+        if (!frontPostcardElement || !backPostcardElement) {
+          throw new Error('Could not find postcard elements');
         }
         
-        console.log('Capturing front container:', frontContainer);
+        // Create clones of the elements to avoid modifying the originals
+        const frontClone = frontPostcardElement.cloneNode(true);
+        const backClone = backPostcardElement.cloneNode(true);
         
-        // Use html2canvas for the front with improved settings
-        const frontCanvas = await html2canvas(frontContainer, {
-          scale: 3, // Higher resolution for better quality
-          useCORS: true, // Allow cross-origin images
+        // Set styles to ensure proper rendering
+        const commonStyles = {
+          position: 'absolute',
+          top: '-9999px',
+          left: '-9999px',
+          width: '879px',
+          height: '591px',
+          transform: 'none',
+          opacity: '1',
+          visibility: 'visible',
+          background: 'white',
+          overflow: 'hidden',
+          display: 'block',
+          zIndex: '-1'
+        };
+        
+        // Apply styles to clones
+        Object.assign(frontClone.style, commonStyles);
+        Object.assign(backClone.style, commonStyles);
+        
+        // Make sure the static canvas is properly cloned for the back card
+        // This is critical to ensure the message, divider line, and stamp box are captured
+        if (staticCanvasRef.current) {
+          // Get the current static canvas content
+          const staticCanvas = staticCanvasRef.current;
+          const staticClone = document.createElement('canvas');
+          staticClone.width = staticCanvas.width;
+          staticClone.height = staticCanvas.height;
+          
+          // Copy the content from the original static canvas
+          const ctx = staticClone.getContext('2d');
+          ctx.drawImage(staticCanvas, 0, 0);
+          
+          // Apply styles to the static canvas clone
+          Object.assign(staticClone.style, {
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+            zIndex: '1'
+          });
+          
+          // Find the canvas in the back clone and replace it or add the new one
+          const existingCanvas = backClone.querySelector('canvas');
+          if (existingCanvas) {
+            backClone.replaceChild(staticClone, existingCanvas);
+          } else {
+            backClone.insertBefore(staticClone, backClone.firstChild);
+          }
+        }
+        
+        // Append to body temporarily
+        document.body.appendChild(frontClone);
+        document.body.appendChild(backClone);
+        
+        // Wait for elements to be rendered
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Capture front postcard
+        const frontCanvas = await html2canvas(frontClone, {
+          scale: 2,
+          useCORS: true,
           allowTaint: true,
           backgroundColor: 'white',
-          imageTimeout: 0, // No timeout for images
-          logging: false, // Disable logging
-          letterRendering: true, // Better text rendering
-          foreignObjectRendering: false, // More consistent rendering
+          logging: false
+        });
+        
+        // Capture back postcard
+        const backCanvas = await html2canvas(backClone, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: 'white',
+          logging: false,
           onclone: (clonedDoc) => {
-            // Make sure stickers are visible in the cloned document
-            const clonedFrontContainer = clonedDoc.querySelector('.preview-front-container');
-            if (clonedFrontContainer) {
-              // Ensure image is loaded properly
-              const img = clonedFrontContainer.querySelector('img');
-              if (img) {
-                img.crossOrigin = 'anonymous';
-                img.style.width = '100%';
-                img.style.height = '100%';
-                img.style.objectFit = 'cover';
-              }
-              
-              // Make stickers visible
-              const stickers = clonedFrontContainer.querySelectorAll('[data-sticker]');
-              stickers.forEach(sticker => {
-                sticker.style.visibility = 'visible';
-                sticker.style.opacity = '1';
+            // Make sure all elements in the clone are visible
+            const clonedBackCard = clonedDoc.querySelector('.preview-back-container');
+            if (clonedBackCard) {
+              // Ensure all canvases are visible
+              const canvases = clonedBackCard.querySelectorAll('canvas');
+              canvases.forEach(canvas => {
+                canvas.style.visibility = 'visible';
+                canvas.style.opacity = '1';
               });
             }
           }
         });
         
-        // Debug the captured front canvas
-        debugCanvas(frontCanvas, 'Front Canvas');
+        // Remove clones from DOM
+        document.body.removeChild(frontClone);
+        document.body.removeChild(backClone);
         
-        // Use html2canvas for the back with improved settings
-        const backCanvas = await html2canvas(backContainer, {
-          scale: 3, // Higher resolution for better quality
-          useCORS: true, // Allow cross-origin images
-          allowTaint: true,
-          backgroundColor: 'white',
-          imageTimeout: 0, // No timeout for images
-          logging: false, // Disable logging
-          letterRendering: true, // Better text rendering
-          foreignObjectRendering: false, // More consistent rendering
-          onclone: (clonedDoc) => {
-            // Make sure stickers are visible in the cloned document
-            const clonedBackContainer = clonedDoc.querySelector('.preview-back-container');
-            if (clonedBackContainer) {
-              // Make stickers visible
-              const stickers = clonedBackContainer.querySelectorAll('[data-sticker]');
-              stickers.forEach(sticker => {
-                sticker.style.visibility = 'visible';
-                sticker.style.opacity = '1';
-              });
-            }
-          }
-        });
+        // Restore console
+        restoreConsole();
         
-        // Debug the captured back canvas
-        debugCanvas(backCanvas, 'Back Canvas');
+        // Check if canvases were created successfully
+        if (!frontCanvas || !backCanvas || 
+            frontCanvas.width === 0 || frontCanvas.height === 0 || 
+            backCanvas.width === 0 || backCanvas.height === 0) {
+          throw new Error('Failed to create canvas');
+        }
         
-        // Show the labels again after capturing
-        labels.forEach(label => {
-          label.style.display = 'block';
-        });
-        
+        // Handle A4 download
         if (downloadFormat === 'a4') {
-          // Create A4 canvas (A4 dimensions in pixels at 300 DPI for better print quality: 2480 x 3508)
+          // Create A4 canvas
           const a4Canvas = document.createElement('canvas');
-          a4Canvas.width = 2480;
+          a4Canvas.width = 2480;  // A4 at 300 DPI
           a4Canvas.height = 3508;
-          const a4Ctx = a4Canvas.getContext('2d');
+          const ctx = a4Canvas.getContext('2d');
+          
+          if (!ctx) {
+            throw new Error('Failed to create canvas context');
+          }
           
           // Fill with white background
-          a4Ctx.fillStyle = 'white';
-          a4Ctx.fillRect(0, 0, a4Canvas.width, a4Canvas.height);
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, a4Canvas.width, a4Canvas.height);
           
-          // Calculate scaled dimensions to fit on A4 while maintaining aspect ratio
+          // Calculate scaled dimensions
           const scale = Math.min(
             (a4Canvas.width - 200) / frontCanvas.width,
             (a4Canvas.height / 2 - 300) / frontCanvas.height
@@ -671,8 +700,8 @@ export default function TestPage() {
           const scaledWidth = Math.floor(frontCanvas.width * scale);
           const scaledHeight = Math.floor(frontCanvas.height * scale);
           
-          // Draw front side at the top with proper scaling
-          a4Ctx.drawImage(
+          // Draw front side
+          ctx.drawImage(
             frontCanvas, 
             Math.floor((a4Canvas.width - scaledWidth) / 2), 
             100, 
@@ -680,8 +709,8 @@ export default function TestPage() {
             scaledHeight
           );
           
-          // Draw back side at the bottom with proper scaling
-          a4Ctx.drawImage(
+          // Draw back side
+          ctx.drawImage(
             backCanvas, 
             Math.floor((a4Canvas.width - scaledWidth) / 2), 
             scaledHeight + 200, 
@@ -690,12 +719,12 @@ export default function TestPage() {
           );
           
           // Add cutting guidelines
-          a4Ctx.strokeStyle = '#aaaaaa';
-          a4Ctx.setLineDash([15, 15]);
-          a4Ctx.lineWidth = 2;
+          ctx.strokeStyle = '#aaaaaa';
+          ctx.setLineDash([15, 15]);
+          ctx.lineWidth = 2;
           
           // Draw cutting lines around front
-          a4Ctx.strokeRect(
+          ctx.strokeRect(
             Math.floor((a4Canvas.width - scaledWidth) / 2) - 15, 
             100 - 15, 
             scaledWidth + 30, 
@@ -703,57 +732,64 @@ export default function TestPage() {
           );
           
           // Draw cutting lines around back
-          a4Ctx.strokeRect(
+          ctx.strokeRect(
             Math.floor((a4Canvas.width - scaledWidth) / 2) - 15, 
             scaledHeight + 200 - 15, 
             scaledWidth + 30, 
             scaledHeight + 30
           );
           
-          // Create download link for A4
-          const a4ImageURL = a4Canvas.toDataURL('image/png');
+          // Download A4 image
+          const a4DataUrl = a4Canvas.toDataURL('image/png');
           const a4Link = document.createElement('a');
-          a4Link.href = a4ImageURL;
+          a4Link.href = a4DataUrl;
           a4Link.download = 'postcard-a4-print.png';
+          a4Link.style.display = 'none';
+          document.body.appendChild(a4Link);
           a4Link.click();
+          document.body.removeChild(a4Link);
           
-          setIsDownloading(false); // Reset loading state
+          setIsDownloading(false);
           setDownloadStatus({
             type: 'success',
             message: 'Your postcard has been downloaded as an A4 print layout.'
           });
-          
         } else {
-          // Create download links for separate images
-          const frontImageURL = frontCanvas.toDataURL('image/png');
-          const backImageURL = backCanvas.toDataURL('image/png');
-          
-          // Create download links
+          // Download separate images
+          // Front image
+          const frontDataUrl = frontCanvas.toDataURL('image/png');
           const frontLink = document.createElement('a');
-          frontLink.href = frontImageURL;
+          frontLink.href = frontDataUrl;
           frontLink.download = 'postcard-front.png';
-          
-          const backLink = document.createElement('a');
-          backLink.href = backImageURL;
-          backLink.download = 'postcard-back.png';
-          
-          // Trigger downloads
+          frontLink.style.display = 'none';
+          document.body.appendChild(frontLink);
           frontLink.click();
+          
+          // Back image (with a small delay)
           setTimeout(() => {
+            const backDataUrl = backCanvas.toDataURL('image/png');
+            const backLink = document.createElement('a');
+            backLink.href = backDataUrl;
+            backLink.download = 'postcard-back.png';
+            backLink.style.display = 'none';
+            document.body.appendChild(backLink);
             backLink.click();
-            setIsDownloading(false); // Reset loading state
+            document.body.removeChild(backLink);
+            document.body.removeChild(frontLink);
+            
+            setIsDownloading(false);
             setDownloadStatus({
               type: 'success',
               message: 'Your postcard front and back have been downloaded as separate images.'
             });
-          }, 100);
+          }, 500);
         }
       } catch (error) {
-        console.error('Error downloading postcard:', error);
+        console.error('Download error:', error);
         setIsDownloading(false);
         setDownloadStatus({
           type: 'error',
-          message: 'There was an error downloading your postcard. Please try again.'
+          message: 'There was an error downloading your postcard: ' + error.message
         });
       }
     };
