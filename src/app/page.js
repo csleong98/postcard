@@ -23,14 +23,12 @@ if (typeof window !== 'undefined') {
 
 const tabs = [
   { id: 'picture', label: 'Picture' },
-  { id: 'stickers', label: 'Stickers' },
-  { id: 'draw', label: 'Draw' }
+  { id: 'stickers', label: 'Stickers' }
 ]
 
 // Add tabs for the back of the postcard
 const backTabs = [
   { id: 'message', label: 'Message' },
-  { id: 'stamp', label: 'Stamp' },
   { id: 'stickers', label: 'Stickers' }
 ]
 
@@ -1158,27 +1156,6 @@ export default function TestPage() {
                     </div>
                   </div>
                 </>
-              )}
-              
-              {activeBackTab === 'stamp' && (
-                <div className="mt-4">
-                  <h3 className="text-lg font-medium mb-3">Choose a Stamp</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Placeholder for stamp options */}
-                    <button className="aspect-square border border-gray-300 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
-                      <div className="text-gray-400">Stamp 1</div>
-                    </button>
-                    <button className="aspect-square border border-gray-300 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
-                      <div className="text-gray-400">Stamp 2</div>
-                    </button>
-                    <button className="aspect-square border border-gray-300 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
-                      <div className="text-gray-400">Stamp 3</div>
-                    </button>
-                    <button className="aspect-square border border-gray-300 rounded-lg hover:border-blue-500 flex items-center justify-center bg-white">
-                      <div className="text-gray-400">Stamp 4</div>
-                    </button>
-                  </div>
-                </div>
               )}
               
               {activeBackTab === 'stickers' && backStickerPickerUI}
