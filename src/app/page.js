@@ -882,7 +882,7 @@ export default function TestPage() {
 
       <div className="flex flex-col lg:flex-row h-[calc(100vh-72px)]">
         {/* Left Panel - Controls */}
-        <div className="w-full lg:w-[500px] order-2 lg:order-1 bg-white p-6 lg:h-[calc(100vh-72px)] lg:sticky lg:top-[72px] overflow-y-auto">
+        <div className="w-full lg:w-[500px] order-2 lg:order-1 bg-white p-6 lg:h-auto lg:sticky lg:top-[72px] overflow-visible pb-32 lg:pb-6">
           {/* Only show on desktop - Back button removed */}
           <div className="mb-6">
             <h1 className="text-3xl font-medium text-[#222222] font-['PP_Editorial_New']">
@@ -1209,48 +1209,50 @@ export default function TestPage() {
         </div>
 
         {/* Right Panel - Postcard Preview */}
-        <div id="postcard-preview" className="w-full lg:flex-1 flex items-start justify-center order-1 lg:order-2 p-4 md:p-8 bg-[#FFDA7B] lg:h-[calc(100vh-72px)] overflow-y-auto">
-          <div className="relative w-full max-w-[800px]">
+        <div id="postcard-preview" className="w-full lg:flex-1 flex items-center justify-center order-1 lg:order-2 p-4 md:p-8 bg-[#FFDA7B] lg:h-auto">
+          <div className="relative w-full max-w-[800px] mx-auto">
             {currentStep === 3 ? (
               // Preview mode - show both sides
-              <div className="space-y-8">
-                <div className="w-full aspect-[879/591]">
-                  <div className="w-full h-full bg-white relative shadow-lg rounded-lg overflow-hidden preview-front-container" id="front-postcard-container">
-                    <div className="w-full h-full p-4 box-border">
-                      <img
-                        src={selectedImage?.src || defaultImage.src}
-                        alt={selectedImage?.alt || defaultImage.alt}
-                        className="w-full h-full object-cover pointer-events-none"
-                        crossOrigin="anonymous"
-                      />
-                    </div>
-                    <div className="absolute inset-0 p-4">
-                      <canvas
-                        width="879"
-                        height="591"
-                        className="w-full h-full absolute inset-0 pointer-events-none"
-                      ></canvas>
-                      {frontCanvasElements}
+              <div className="flex flex-col lg:flex-col space-y-8 lg:space-y-8 pb-4 md:pb-0">
+                <div className="flex flex-nowrap md:flex-col space-x-8 md:space-x-0 md:space-y-8 overflow-x-auto md:overflow-visible w-full pb-4 md:pb-0">
+                  <div className="w-[300px] md:w-full aspect-[879/591] shrink-0">
+                    <div className="w-full h-full bg-white relative shadow-lg rounded-lg overflow-hidden preview-front-container" id="front-postcard-container">
+                      <div className="w-full h-full p-4 box-border">
+                        <img
+                          src={selectedImage?.src || defaultImage.src}
+                          alt={selectedImage?.alt || defaultImage.alt}
+                          className="w-full h-full object-cover pointer-events-none"
+                          crossOrigin="anonymous"
+                        />
+                      </div>
+                      <div className="absolute inset-0 p-4">
+                        <canvas
+                          width="879"
+                          height="591"
+                          className="w-full h-full absolute inset-0 pointer-events-none"
+                        ></canvas>
+                        {frontCanvasElements}
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                <div className="w-full aspect-[879/591]">
-                  <div className="w-full h-full bg-white relative shadow-lg rounded-lg overflow-hidden preview-back-container">
-                    <canvas
-                      ref={staticCanvasRef}
-                      width="879"
-                      height="591"
-                      className="w-full h-full"
-                    ></canvas>
-                    <div className="absolute inset-0">
+                  
+                  <div className="w-[300px] md:w-full aspect-[879/591] shrink-0">
+                    <div className="w-full h-full bg-white relative shadow-lg rounded-lg overflow-hidden preview-back-container">
                       <canvas
-                        ref={backCanvasRef}
+                        ref={staticCanvasRef}
                         width="879"
                         height="591"
-                        className="w-full h-full absolute inset-0 pointer-events-none"
+                        className="w-full h-full"
                       ></canvas>
-                      {backCanvasElements}
+                      <div className="absolute inset-0">
+                        <canvas
+                          ref={backCanvasRef}
+                          width="879"
+                          height="591"
+                          className="w-full h-full absolute inset-0 pointer-events-none"
+                        ></canvas>
+                        {backCanvasElements}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1323,7 +1325,7 @@ export default function TestPage() {
         
         {/* Mobile Navigation - Fixed at bottom */}
         {currentStep < 3 && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 lg:hidden z-10">
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 lg:hidden z-20">
             <div className="flex gap-3">
               {currentStep > 1 && (
                 <button 
