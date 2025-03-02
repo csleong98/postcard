@@ -948,10 +948,10 @@ export default function TestPage() {
       <header className="bg-[#222222] text-white py-4 px-6 flex justify-between items-center sticky top-0 z-20">
         <h1 className="text-3xl font-light italic font-['PP_Editorial_New'] mx-auto">Postcards</h1>
         <div className="flex items-center gap-4 absolute right-6">
-          <button className="flex items-center gap-1 hover:text-gray-300">
+          <a href="https://tally.so/r/wAjk9D" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-gray-300">
             <ChatCircle size={24} weight="fill" />
             <span className="hidden md:inline">Give feedback</span>
-          </button>
+          </a>
           <Link href="/about" className="flex items-center gap-1 hover:text-gray-300">
             <Smiley size={24} weight="fill" />
             <span className="hidden md:inline">About Postcards.my</span>
